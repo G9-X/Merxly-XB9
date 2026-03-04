@@ -63,6 +63,8 @@ namespace merxly.Infrastructure
             .AddEntityFrameworkStores<ApplicationDbContext>()
             .AddDefaultTokenProviders();
 
+            services.AddHttpContextAccessor();
+
             // JWT Configuration
             var jwtSettings = configuration.GetSection("JWT").Get<JwtSettings>()
                 ?? throw new InvalidOperationException("JWT settings not found in configuration.");

@@ -4,6 +4,7 @@ using merxly.Application.Interfaces.Services;
 using merxly.Application.Settings;
 using merxly.Domain.Constants;
 using merxly.Domain.Entities;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -20,6 +21,7 @@ namespace merxly.Infrastructure.Services
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly JwtSettings _jwtSettings;
         private readonly ILogger<AuthService> _logger;
 
@@ -27,12 +29,14 @@ namespace merxly.Infrastructure.Services
             UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
             IUnitOfWork unitOfWork,
+            IHttpContextAccessor httpContextAccessor,
             IOptions<JwtSettings> jwtSettings,
             ILogger<AuthService> logger)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _unitOfWork = unitOfWork;
+            _httpContextAccessor = httpContextAccessor;
             _jwtSettings = jwtSettings.Value;
             _logger = logger;
         }
@@ -94,9 +98,17 @@ namespace merxly.Infrastructure.Services
             return await GenerateAuthResponseAsync(user, cancellationToken);
         }
 
-        public async Task<LoginResponseDto> RefreshTokenAsync(string refreshToken, CancellationToken cancellationToken)
+        public async Task<LoginResponseDto> RefreshTokenAsync(CancellationToken cancellationToken)
         {
             _logger.LogInformation("Refresh token attempt");
+
+            var httpContext = GetHttpContext();
+            string? refreshToken = httpContext.Request.Cookies["refreshToken"];
+            if (string.IsNullOrEmpty(refreshToken))
+            {
+                _logger.LogWarning("Refresh token failed: No refresh token provided");
+                throw new UnauthorizedAccessException("No refresh token provided.");
+            }
 
             var storedToken = await _unitOfWork.RefreshToken.GetFirstOrDefaultAsync(
                 rt => rt.Token == refreshToken,
@@ -123,9 +135,17 @@ namespace merxly.Infrastructure.Services
             return await GenerateAuthResponseAsync(user, cancellationToken);
         }
 
-        public async Task RevokeTokenAsync(string refreshToken, CancellationToken cancellationToken)
+        public async Task RevokeTokenAsync(CancellationToken cancellationToken)
         {
             _logger.LogInformation("Revoke token attempt");
+
+            var httpContext = GetHttpContext();
+            string? refreshToken = httpContext.Request.Cookies["refreshToken"];
+            if (string.IsNullOrEmpty(refreshToken))
+            {
+                _logger.LogWarning("Revoke token failed: No refresh token provided");
+                throw new UnauthorizedAccessException("No refresh token provided.");
+            }
 
             var storedToken = await _unitOfWork.RefreshToken.GetFirstOrDefaultAsync(
                 rt => rt.Token == refreshToken,
@@ -155,12 +175,12 @@ namespace merxly.Infrastructure.Services
             var roles = await _userManager.GetRolesAsync(user);
             var accessToken = GenerateAccessToken(user, roles);
             var refreshToken = await GenerateAndSaveRefreshTokenAsync(user.Id, cancellationToken);
+            SetRefreshTokenCookie(refreshToken);
             var expiresAt = DateTime.UtcNow.AddMinutes(_jwtSettings.AccessTokenExpiryInMinutes);
 
             return new LoginResponseDto
             {
                 AccessToken = accessToken,
-                RefreshToken = refreshToken,
                 ExpiresAt = expiresAt,
                 UserId = user.Id,
                 Email = user.Email!,
@@ -221,6 +241,26 @@ namespace merxly.Infrastructure.Services
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return refreshToken;
+        }
+
+        private void SetRefreshTokenCookie(string refreshToken)
+        {
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpiryInDays)
+            };
+
+            var httpContext = GetHttpContext();
+            httpContext.Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
+        }
+
+        private HttpContext GetHttpContext()
+        {
+            return _httpContextAccessor.HttpContext
+                ?? throw new InvalidOperationException("HTTP context is not available.");
         }
     }
 }

@@ -37,16 +37,16 @@ namespace merxly.API.Controllers
         }
 
         [HttpPost("refresh-token")]
-        public async Task<ActionResult<ResponseDto<LoginResponseDto>>> RefreshToken([FromBody] RefreshTokenDto refreshTokenDto, CancellationToken cancellationToken)
+        public async Task<ActionResult<ResponseDto<LoginResponseDto>>> RefreshToken(CancellationToken cancellationToken)
         {
-            var result = await _authService.RefreshTokenAsync(refreshTokenDto.RefreshToken, cancellationToken);
+            var result = await _authService.RefreshTokenAsync(cancellationToken);
             return OkResponse(result, "Token refreshed successfully");
         }
 
         [HttpPost("revoke-token")]
-        public async Task<ActionResult> RevokeToken([FromBody] RefreshTokenDto refreshTokenDto, CancellationToken cancellationToken)
+        public async Task<ActionResult> RevokeToken(CancellationToken cancellationToken)
         {
-            await _authService.RevokeTokenAsync(refreshTokenDto.RefreshToken, cancellationToken);
+            await _authService.RevokeTokenAsync(cancellationToken);
             return NoContent();
         }
     }

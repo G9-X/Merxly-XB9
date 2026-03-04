@@ -7,38 +7,33 @@ import type { Response } from '../types/api/common';
 import apiClient from './apiClient';
 
 export const loginUser = async (
-  data: LoginRequest
+  data: LoginRequest,
 ): Promise<Response<LoginResponse>> => {
   const response = await apiClient.post<Response<LoginResponse>>(
     '/auth/login',
-    data
+    data,
   );
   return response.data;
 };
 
 export const registerUser = async (
-  data: RegisterRequest
+  data: RegisterRequest,
 ): Promise<Response<LoginResponse>> => {
   const response = await apiClient.post<Response<LoginResponse>>(
     '/auth/register',
-    data
+    data,
   );
   return response.data;
 };
 
-export const refreshToken = async (
-  token: string
-): Promise<Response<LoginResponse>> => {
+export const refreshToken = async (): Promise<Response<LoginResponse>> => {
   const response = await apiClient.post<Response<LoginResponse>>(
     '/auth/refresh-token',
-    { token }
   );
   return response.data;
 };
 
-export const revokeToken = async (token: string): Promise<Response<null>> => {
-  const response = await apiClient.post<Response<null>>('/auth/revoke-token', {
-    token,
-  });
+export const revokeToken = async (): Promise<Response<null>> => {
+  const response = await apiClient.post<Response<null>>('/auth/revoke-token');
   return response.data;
 };

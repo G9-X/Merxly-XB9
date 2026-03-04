@@ -44,7 +44,7 @@ namespace merxly.API.Middlewares
             catch (UnauthorizedAccessException ex)
             {
                 _logger.LogWarning(ex, "Unauthorized access attempt: {Message}", ex.Message);
-                await HandleExceptionAsync(context, ex, StatusCodes.Status401Unauthorized, "Unauthorized");
+                await HandleExceptionAsync(context, ex, StatusCodes.Status401Unauthorized, ex.Message);
             }
             catch (InvalidOperationException ex)
             {
