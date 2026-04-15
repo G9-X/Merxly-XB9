@@ -2,7 +2,7 @@ name: Deploy Frontend to S3 + CloudFront
 
 on:
   push:
-    branches: ["develop"]
+    branches: ["main"]
     paths:
       - "merxly_frontend/**"
       - "fe/**"
