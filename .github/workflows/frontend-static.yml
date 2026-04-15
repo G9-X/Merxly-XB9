@@ -1,0 +1,138 @@
+name: Deploy Frontend to S3 + CloudFront
+
+on:
+  push:
+    branches: ["develop"]
+    paths:
+      - "merxly_frontend/**"
+      - "fe/**"
+      - ".github/workflows/frontend-static.yml"
+  pull_request:
+    branches: ["develop"]
+    paths:
+      - "merxly_frontend/**"
+      - "fe/**"
+      - ".github/workflows/frontend-static.yml"
+  workflow_dispatch:
+
+env:
+  VERSION: v1.0.${{ github.run_number }}
+
+permissions:
+  contents: read
+
+jobs:
+  frontend-ci:
+    name: Frontend CI
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect frontend directory
+        id: detect_frontend
+        run: |
+          if [ -d "fe" ]; then
+            echo "dir=fe" >> "$GITHUB_OUTPUT"
+          elif [ -d "merxly_frontend" ]; then
+            echo "dir=merxly_frontend" >> "$GITHUB_OUTPUT"
+          else
+            echo "Cannot find frontend folder (fe or merxly_frontend)." >&2
+            exit 1
+          fi
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: |
+            fe/package-lock.json
+            merxly_frontend/package-lock.json
+
+      - name: Install deps
+        working-directory: ${{ steps.detect_frontend.outputs.dir }}
+        run: npm ci
+
+      - name: Lint
+        working-directory: ${{ steps.detect_frontend.outputs.dir }}
+        run: npm run lint
+
+      - name: Build
+        working-directory: ${{ steps.detect_frontend.outputs.dir }}
+        env:
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+          VITE_GOOGLE_CLIENT_ID: ${{ vars.VITE_GOOGLE_CLIENT_ID }}
+          NODE_ENV: production
+        run: npm run build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: ${{ steps.detect_frontend.outputs.dir }}/dist
+          if-no-files-found: error
+
+  frontend-deploy:
+    name: Deploy to S3 + CloudFront
+    runs-on: ubuntu-latest
+    needs: frontend-ci
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: dist
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Deploy to S3 (smart cache headers)
+        run: |
+          echo "Deploying ${{ env.VERSION }} to S3..."
+          aws s3 sync dist/assets/ s3://${{ secrets.S3_BUCKET_NAME }}/assets/ \
+            --cache-control "public, max-age=31536000, immutable" \
+            --delete
+
+          aws s3 sync dist/ s3://${{ secrets.S3_BUCKET_NAME }} \
+            --cache-control "public, max-age=0, must-revalidate" \
+            --exclude "assets/*" \
+            --delete
+
+      - name: Invalidate CloudFront cache (index only)
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths "/index.html" "/"
+
+      - name: Create Git tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag "fe-${{ env.VERSION }}"
+          git push origin "fe-${{ env.VERSION }}"
+
+      - name: Summary
+        run: |
+          echo "## Frontend Deploy Complete" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Item | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Version | ${{ env.VERSION }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| S3 Bucket | ${{ secrets.S3_BUCKET_NAME }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| CloudFront | ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} |" >> "$GITHUB_STEP_SUMMARY"

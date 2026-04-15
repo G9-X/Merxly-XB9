@@ -1,0 +1,62 @@
+name: Backend CI
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "merxly_backend/**"
+      - "be/**"
+      - ".github/workflows/backend-ci.yml"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "merxly_backend/**"
+      - "be/**"
+      - ".github/workflows/backend-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backend-ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect backend solution
+        id: detect_backend
+        run: |
+          if [ -d "be" ]; then
+            backend_dir="be"
+          elif [ -d "merxly_backend" ]; then
+            backend_dir="merxly_backend"
+          else
+            echo "Cannot find backend folder (be or merxly_backend)." >&2
+            exit 1
+          fi
+
+          sln_path=$(find "$backend_dir" -maxdepth 2 -name "*.sln" | head -n 1)
+          if [ -z "$sln_path" ]; then
+            echo "Cannot find .sln under $backend_dir" >&2
+            exit 1
+          fi
+
+          echo "backend_dir=$backend_dir" >> "$GITHUB_OUTPUT"
+          echo "sln_path=$sln_path" >> "$GITHUB_OUTPUT"
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restore
+        run: dotnet restore "${{ steps.detect_backend.outputs.sln_path }}"
+
+      - name: Build
+        run: dotnet build "${{ steps.detect_backend.outputs.sln_path }}" --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test "${{ steps.detect_backend.outputs.sln_path }}" --configuration Release --no-build --verbosity normal
