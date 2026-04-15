@@ -15,6 +15,24 @@ import type {
 } from '../../types/models/userProfile';
 import { toast } from 'react-toastify';
 
+type ApiErrorShape = {
+  response?: {
+    data?: {
+      message?: string;
+      errors?: string[];
+    };
+  };
+};
+
+const extractErrorMessage = (error: unknown, fallback: string) => {
+  const apiError = error as ApiErrorShape;
+  return (
+    apiError.response?.data?.message ||
+    apiError.response?.data?.errors?.join(', ') ||
+    fallback
+  );
+};
+
 export const UserProfilePage = () => {
   const { data, isLoading } = useUserProfile();
   const updateProfileMutation = useUpdateUserProfile();
@@ -105,12 +123,8 @@ export const UserProfilePage = () => {
       });
 
       toast.success('Avatar updated successfully!');
-    } catch (error: any) {
-      toast.error(
-        error.response?.data?.message ||
-          error.response?.data?.errors?.join(', ') ||
-          'Failed to upload avatar',
-      );
+    } catch (error: unknown) {
+      toast.error(extractErrorMessage(error, 'Failed to upload avatar'));
     } finally {
       setIsUploadingAvatar(false);
       // Reset file input
@@ -124,13 +138,9 @@ export const UserProfilePage = () => {
     try {
       await updateProfileMutation.mutateAsync(data);
       toast.success('Profile updated successfully!');
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(
-        `Profile update failed: ${
-          error.response?.data?.message ||
-          error.response?.data?.errors?.join(', ') ||
-          'Unknown error'
-        }`,
+        `Profile update failed: ${extractErrorMessage(error, 'Unknown error')}`,
       );
     }
   };
@@ -145,13 +155,9 @@ export const UserProfilePage = () => {
       await changePasswordMutation.mutateAsync(data);
       toast.success('Password changed successfully!');
       resetPassword();
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(
-        `Password change failed: ${
-          error.response?.data?.message ||
-          error.response?.data?.errors?.join(', ') ||
-          'Failed to change password'
-        }`,
+        `Password change failed: ${extractErrorMessage(error, 'Failed to change password')}`,
       );
     }
   };

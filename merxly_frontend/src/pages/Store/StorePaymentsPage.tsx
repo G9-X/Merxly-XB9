@@ -31,7 +31,10 @@ export const StorePaymentsPage = () => {
   const { data: transactionsResponse, isLoading: isLoadingTransactions } =
     useStoreTransactions({ pageNumber, pageSize });
 
-  const transactions = transactionsResponse?.data?.items || [];
+  const transactions = useMemo(
+    () => transactionsResponse?.data?.items ?? [],
+    [transactionsResponse?.data?.items]
+  );
 
   // Calculate stats from transactions
   const stats = useMemo(() => {

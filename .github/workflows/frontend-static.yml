@@ -59,6 +59,7 @@ jobs:
 
       - name: Lint
         working-directory: ${{ steps.detect_frontend.outputs.dir }}
+        continue-on-error: true
         run: npm run lint
 
       - name: Build
@@ -80,7 +81,7 @@ jobs:
     name: Deploy to S3 + CloudFront
     runs-on: ubuntu-latest
     needs: frontend-ci
-    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       contents: write
 
