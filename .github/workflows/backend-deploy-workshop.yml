@@ -1,6 +1,12 @@
 name: Backend Deploy (Workshop Account)
 
 on:
+  push:
+    branches: ["develop"]
+    paths:
+      - "merxly_backend/**"
+      - "be/**"
+      - ".github/workflows/backend-deploy-workshop.yml"
   workflow_dispatch:
     inputs:
       image_tag:

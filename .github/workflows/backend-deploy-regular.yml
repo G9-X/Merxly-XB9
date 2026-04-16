@@ -1,12 +1,6 @@
 name: Backend Deploy (Regular Account)
 
 on:
-  push:
-    branches: ["develop"]
-    paths:
-      - "merxly_backend/**"
-      - "be/**"
-      - ".github/workflows/backend-deploy-regular.yml"
   workflow_dispatch:
 
 permissions:
