@@ -7,6 +7,12 @@ on:
       - "merxly_backend/**"
       - "be/**"
       - ".github/workflows/backend-deploy-workshop.yml"
+  pull_request:
+    branches: ["develop"]
+    paths:
+      - "merxly_backend/**"
+      - "be/**"
+      - ".github/workflows/backend-deploy-workshop.yml"
   workflow_dispatch:
     inputs:
       image_tag:
@@ -129,9 +135,17 @@ jobs:
 
       - name: Login to Amazon ECR
         id: login-ecr
+        if: ${{ github.event_name != 'pull_request' }}
         uses: aws-actions/amazon-ecr-login@v2
 
+      - name: Build backend image (PR)
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          set -e
+          docker build -t backend-pr:${GITHUB_SHA::12} "${{ steps.detect_backend.outputs.backend_dir }}"
+
       - name: Build and push backend image
+        if: ${{ github.event_name != 'pull_request' }}
         id: image
         run: |
           set -e
@@ -155,7 +169,7 @@ jobs:
           echo "image_uri=$IMAGE_SHA" >> "$GITHUB_OUTPUT"
 
       - name: Run EF Core migration (MySQL)
-        if: ${{ env.WORKSHOP_RUN_DB_MIGRATION == 'true' }}
+        if: ${{ env.WORKSHOP_RUN_DB_MIGRATION == 'true' && github.event_name != 'pull_request' }}
         run: |
           set -e
           dotnet tool install --global dotnet-ef --version 8.*
@@ -168,6 +182,7 @@ jobs:
             --startup-project "${{ steps.detect_backend.outputs.api_csproj }}"
 
       - name: Register new ECS task definition revision
+        if: ${{ github.event_name != 'pull_request' }}
         id: taskdef
         run: |
           set -e
@@ -206,6 +221,7 @@ jobs:
           echo "taskdef_arn=$NEW_TASKDEF_ARN" >> "$GITHUB_OUTPUT"
 
       - name: Deploy to ECS service
+        if: ${{ github.event_name != 'pull_request' }}
         run: |
           set -e
           aws ecs update-service \
@@ -218,6 +234,7 @@ jobs:
             --services "$ECS_SERVICE_NAME"
 
       - name: Summary
+        if: ${{ github.event_name != 'pull_request' }}
         run: |
           echo "## Backend Deploy Complete (Workshop)" >> "$GITHUB_STEP_SUMMARY"
           echo "| Item | Value |" >> "$GITHUB_STEP_SUMMARY"
@@ -228,3 +245,9 @@ jobs:
           echo "| Task Family | $ECS_TASK_FAMILY |" >> "$GITHUB_STEP_SUMMARY"
           echo "| Container | ${BACKEND_CONTAINER_NAME:-backend} |" >> "$GITHUB_STEP_SUMMARY"
           echo "| Image | ${{ steps.image.outputs.image_uri }} |" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: PR Summary
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          echo "## Backend CI Complete (PR)" >> "$GITHUB_STEP_SUMMARY"
+          echo "Build/restore/check completed for PR; deploy steps are intentionally skipped." >> "$GITHUB_STEP_SUMMARY"
