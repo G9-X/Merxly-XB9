@@ -161,6 +161,7 @@ jobs:
               ephemeralStorage
             }
             | .containerDefinitions = (.containerDefinitions | map(if .name == $NAME then .image = $IMAGE else . end))
+            | with_entries(select(.value != null))
           ' taskdef.json > new-taskdef.json
 
           NEW_TASKDEF_ARN=$(aws ecs register-task-definition \
