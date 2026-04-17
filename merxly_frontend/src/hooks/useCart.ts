@@ -8,9 +8,11 @@ import {
 } from '../services/cartService';
 import type { UpdateCartItemDto } from '../types/models/cart';
 import { toast } from 'react-toastify';
+import { useAuth } from '../contexts/AuthContext';
 
 export const useCart = () => {
   const queryClient = useQueryClient();
+  const { isAuthenticated } = useAuth();
 
   const {
     data: cartData,
@@ -19,6 +21,7 @@ export const useCart = () => {
   } = useQuery({
     queryKey: ['cart'],
     queryFn: getCart,
+    enabled: isAuthenticated,
   });
 
   const addToCartMutation = useMutation({
