@@ -1,8 +1,14 @@
 import axios from 'axios';
 import type { Response } from '../types/api/common';
 
-const API_BASE_URL =
+const normalizeBaseUrl = (url: string): string => {
+  // Keep protocol slashes (https://) but collapse accidental duplicate slashes in path.
+  return url.replace(/([^:]\/)\/+?/g, '$1').replace(/\/+$/, '');
+};
+
+const RAW_API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || 'https://localhost:7052/api';
+const API_BASE_URL = normalizeBaseUrl(RAW_API_BASE_URL);
 console.log('API_BASE_URL:', API_BASE_URL);
 
 const apiClient = axios.create({
