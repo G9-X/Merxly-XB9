@@ -66,7 +66,7 @@ export const ProductBasicInfo = ({
         <Input
           label='Product Name'
           value={productName}
-          onChange={(e) => onProductNameChange(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => onProductNameChange(e.target.value)}
           placeholder='e.g. Classic T-Shirt'
         />
 
