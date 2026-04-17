@@ -1,4 +1,4 @@
-import { Input } from '../ui/Input';
+import { Input } from '../ui/input';
 import { ProductCategorySelector } from './ProductCategorySelector';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';

@@ -8,7 +8,7 @@ import {
 import { getProductImageUrl } from '../../utils/cloudinaryHelpers';
 import { uploadImage } from '../../services/uploadService';
 import { ImageType } from '../../types/enums';
-import { Input } from '../../components/ui/Input';
+import { Input } from '../../components/ui/input';
 import type {
   UpdateUserProfileDto,
   ChangePasswordDto,
