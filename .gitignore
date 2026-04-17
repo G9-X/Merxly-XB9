@@ -391,3 +391,4 @@ __pycache__/
 # Logs and Temp
 *.log
 *.tmp
+merxly_backend/merxly.API/appsettings.json
