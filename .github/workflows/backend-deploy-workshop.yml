@@ -43,6 +43,7 @@ jobs:
   deploy:
     name: Build + Deploy via GitHub Runner (OIDC)
     runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'push' }}
 
     steps:
       - name: Checkout
