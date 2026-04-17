@@ -1,0 +1,89 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - echo "Installing tools"
+      - dotnet --version
+      - docker --version
+      - aws --version
+      - jq --version
+      - dotnet tool install --global dotnet-ef --version 8.*
+      - export PATH="$PATH:/root/.dotnet/tools"
+
+  pre_build:
+    commands:
+      - echo "Detect backend directory"
+      - |
+        if [ -d "be" ]; then
+          export BACKEND_DIR="be"
+        elif [ -d "merxly_backend" ]; then
+          export BACKEND_DIR="merxly_backend"
+        else
+          echo "Cannot find backend folder (be or merxly_backend)." >&2
+          exit 1
+        fi
+      - export API_CSPROJ="$BACKEND_DIR/merxly.API/merxly.API.csproj"
+      - export INFRA_CSPROJ="$BACKEND_DIR/merxly.Infrastructure/merxly.Infrastructure.csproj"
+      - export SLN_PATH=$(find "$BACKEND_DIR" -maxdepth 2 -name "*.sln" | head -n 1)
+      - test -f "$API_CSPROJ"
+      - test -f "$INFRA_CSPROJ"
+      - test -n "$SLN_PATH"
+      - export IMAGE_TAG="${CODEBUILD_RESOLVED_SOURCE_VERSION:0:12}"
+      - export ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+      - export ECR_URI="$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY_NAME"
+      - echo "Logging in to ECR"
+      - aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
+      - echo "Restoring .NET solution"
+      - dotnet restore "$SLN_PATH"
+
+  build:
+    commands:
+      - echo "Build and push image"
+      - docker build -t "$ECR_URI:$IMAGE_TAG" "$BACKEND_DIR"
+      - docker tag "$ECR_URI:$IMAGE_TAG" "$ECR_URI:latest"
+      - docker push "$ECR_URI:$IMAGE_TAG"
+      - docker push "$ECR_URI:latest"
+      - printf '[{"name":"%s","imageUri":"%s"}]' "$BACKEND_CONTAINER_NAME" "$ECR_URI:$IMAGE_TAG" > imagedefinitions.json
+
+  post_build:
+    commands:
+      - echo "Run DB migration when connection string is configured"
+      - |
+        if [ -n "$BACKEND_DB_CONNECTION_STRING" ]; then
+          export ConnectionStrings__DefaultConnection="$BACKEND_DB_CONNECTION_STRING"
+          dotnet ef database update --project "$INFRA_CSPROJ" --startup-project "$API_CSPROJ"
+        else
+          echo "BACKEND_DB_CONNECTION_STRING is empty, skipping migration"
+        fi
+      - echo "Register and deploy new ECS task definition"
+      - aws ecs describe-task-definition --task-definition "$ECS_TASK_FAMILY" --query taskDefinition > taskdef.json
+      - |
+        jq --arg IMAGE "$ECR_URI:$IMAGE_TAG" --arg NAME "$BACKEND_CONTAINER_NAME" '
+          {
+            family,
+            taskRoleArn,
+            executionRoleArn,
+            networkMode,
+            containerDefinitions,
+            volumes,
+            placementConstraints,
+            requiresCompatibilities,
+            cpu,
+            memory,
+            runtimePlatform,
+            proxyConfiguration,
+            ipcMode,
+            pidMode,
+            inferenceAccelerators,
+            ephemeralStorage
+          }
+          | .containerDefinitions = (.containerDefinitions | map(if .name == $NAME then .image = $IMAGE else . end))
+        ' taskdef.json > new-taskdef.json
+      - export NEW_TASKDEF_ARN=$(aws ecs register-task-definition --cli-input-json file://new-taskdef.json --query 'taskDefinition.taskDefinitionArn' --output text)
+      - aws ecs update-service --cluster "$ECS_CLUSTER_NAME" --service "$ECS_SERVICE_NAME" --task-definition "$NEW_TASKDEF_ARN"
+      - aws ecs wait services-stable --cluster "$ECS_CLUSTER_NAME" --services "$ECS_SERVICE_NAME"
+
+artifacts:
+  files:
+    - imagedefinitions.json

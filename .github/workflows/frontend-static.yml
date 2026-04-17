@@ -8,7 +8,7 @@ on:
       - "fe/**"
       - ".github/workflows/frontend-static.yml"
   pull_request:
-    branches: ["develop"]
+    branches: ["main"]
     paths:
       - "merxly_frontend/**"
       - "fe/**"
