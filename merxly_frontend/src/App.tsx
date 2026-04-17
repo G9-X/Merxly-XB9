@@ -50,9 +50,10 @@ import { StorePaymentsPage } from './pages/Store/StorePaymentsPage';
 import { StoreMyStorePage } from './pages/Store/StoreMyStorePage';
 import { SignUpNewStorePage } from './pages/SignUpNewStorePage';
 
-const stripePromise = loadStripe(
-  import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '',
-);
+const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+const stripePromise = stripePublishableKey
+  ? loadStripe(stripePublishableKey)
+  : Promise.resolve(null);
 
 function App() {
   return (
