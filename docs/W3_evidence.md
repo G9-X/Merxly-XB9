@@ -3,8 +3,14 @@
 * **Group Name:** G9-X (Merxly)
 * **Members:** 
   - Lê Hoàng Trung Kiên
-  - [Thành viên 2]
-  - [Thành viên 3]
+  - Trần Văn Đức — Team Lead 
+  - Nguyễn Đức Chinh
+  - Phạm Nguyễn Nam Khánh
+  - Hoàng Trọng Tấn
+  - Trương Thị Mỹ Quyên
+  - Trần Đình Bảo Long
+  - Lê Duy Khánh
+  - Nguyễn Hữu Định
 * **Database Engine:** Amazon RDS for MySQL
 * **Database Paradigm:** Relational Database
 
