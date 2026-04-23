@@ -5,6 +5,7 @@ import type { LoginResponse } from '../types/api/auth';
 interface AuthContextType {
   user: LoginResponse | null;
   isAuthenticated: boolean;
+  isLoading: boolean;
   login: (userData: LoginResponse) => void;
   logout: () => void;
   updateUser: (userData: Partial<LoginResponse>) => void;
@@ -13,6 +14,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const [isLoading] = useState(false);
   const [user, setUser] = useState<LoginResponse | null>(() => {
     const storedAuth = localStorage.getItem('auth');
 
@@ -64,7 +66,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AuthContext.Provider
-      value={{ user, isAuthenticated, login, logout, updateUser }}
+      value={{ user, isAuthenticated, isLoading, login, logout, updateUser }}
     >
       {children}
     </AuthContext.Provider>

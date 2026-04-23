@@ -8,8 +8,10 @@ interface PublicRouteProps {
 }
 
 export const PublicRoute = ({ children }: PublicRouteProps) => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const location = useLocation();
+
+  if (isLoading) return null;
 
   if (isAuthenticated) {
     const fromLocation = (location.state as { from?: Location })?.from;

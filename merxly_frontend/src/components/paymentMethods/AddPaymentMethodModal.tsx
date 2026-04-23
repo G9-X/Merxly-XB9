@@ -9,9 +9,10 @@ import {
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { createSetupIntent } from '../../services/paymentMethodService';
 
-const stripePromise = loadStripe(
-  import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '',
-);
+const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+const stripePromise = stripePublishableKey
+  ? loadStripe(stripePublishableKey)
+  : Promise.resolve(null);
 
 interface AddPaymentMethodModalProps {
   isOpen: boolean;
