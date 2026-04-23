@@ -1,4 +1,4 @@
-import { LineChart } from '@mui/x-charts/LineChart';
+import { LineChart } from '@mui/x-charts';
 
 const revenueData = [
   { month: 'Jan', revenue: 12000, orders: 45 },
