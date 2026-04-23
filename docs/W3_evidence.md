@@ -3,8 +3,14 @@
 * **Group Name:** G9-X (Merxly)
 * **Members:** 
   - Lê Hoàng Trung Kiên
-  - [Thành viên 2]
-  - [Thành viên 3]
+  - Trần Văn Đức — Team Lead 
+  - Nguyễn Đức Chinh
+  - Phạm Nguyễn Nam Khánh
+  - Hoàng Trọng Tấn
+  - Trương Thị Mỹ Quyên
+  - Trần Đình Bảo Long
+  - Lê Duy Khánh
+  - Nguyễn Hữu Định
 * **Database Engine:** Amazon RDS for MySQL
 * **Database Paradigm:** Relational Database
 
@@ -14,17 +20,42 @@
 
 ### Part A: Application Workflow
 *(Mô tả các luồng truy cập dữ liệu chính của ứng dụng. Ví dụ: Người dùng vào xem sản phẩm, người dùng đặt hàng, cửa hàng xem thống kê...)*
-1. Luồng 1: ...
-2. Luồng 2: ...
+
+1. **Product listing by category/filter/sort** 
+— Users browse category pages and retrieve active products by `category`, optional `price range`, and sort by newest or price 
+
+2. **Place an order (checkout)**
+  — Users submit checkout, and the system creates an order, inserts order items, updates stock in `ProductVariants`, and records payment state
+
+3. **Order history for one user**
+  — Users open **My Orders** to fetch all their orders sorted by latest date, then view order details
 
 ### Part B: Query Specifications
 *(Mô tả các câu query hoặc thao tác dữ liệu cụ thể dùng để đáp ứng các Workflow ở Part A)*
-* **Query 1:** `SELECT * FROM Products WHERE CategoryId = ?` (dùng cho Luồng 1)
-* **Query 2:** ...
+1. **Pattern 1 →** RDS MySQL `Products` table, indexes on `CategoryId` and `(CategoryId, IsActive, MinPrice)`
+   — Filter by category + active status, then range scan by price  
+   — Supporting index on `CreatedAt` for sort by newest
+
+2. **Pattern 2 →** RDS MySQL `Orders`, `SubOrders`, `OrderItems`, `Payments`, `ProductVariants`
+   — InnoDB ACID transaction for checkout flow  
+   — PK/FK across `Orders -> SubOrders -> OrderItems`, payment linked by `Payments.OrderId`, stock updated in `ProductVariants.StockQuantity`
+
+3. **Pattern 3 →** RDS MySQL `Orders` table with index `(UserId, CreatedAt)`, plus `SubOrders(OrderId)` and `OrderItems(SubOrderId)`
+   — Fetch order history by user and sort by latest date without full scan  
+   — Expand order details through indexed foreign keys
 
 ### Part C: Schema / Data Model
 *(Đính kèm hình ảnh ERD (Entity Relationship Diagram) hoặc mô tả cấu trúc bảng (Table) của database)*
+Pick pattern #2 (place an order / checkout):  
+Nếu dùng **key-value store** làm database chính:
+— Checkout phải ghi vào nhiều entity: `Orders`, `SubOrders`, `OrderItems`, `Payments`, và cập nhật stock ở `ProductVariants`  
+— Không có relational integrity native nên application phải tự xử lý đồng bộ dữ liệu  
+— Dễ gặp trạng thái không nhất quán như: payment created but order details missing, hoặc stock chưa update sau khi tạo order  
 
+→ **Relational paradigm** phù hợp hơn vì:
+   - Có **ACID transaction** cho luồng checkout
+   - Có **foreign key** để đảm bảo integrity
+   - Hỗ trợ tốt multi-table write theo đúng schema hiện tại
 
 
 ---
