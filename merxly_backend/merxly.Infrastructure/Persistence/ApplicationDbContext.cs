@@ -36,6 +36,8 @@ namespace merxly.Infrastructure.Persistence
         public DbSet<Wishlist> Wishlists { get; set; }
         public DbSet<WishlistItem> WishlistItems { get; set; }
         public DbSet<SubOrder> SubOrders { get; set; }
+        public DbSet<ChatThread> ChatThreads { get; set; }
+        public DbSet<ChatMessage> ChatMessages { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

@@ -20,6 +20,7 @@ import {
   UserProfilePage,
   PaymentMethodsPage,
   AddressesPage,
+  ChatPage,
 } from './pages/User';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { PublicRoute } from './components/PublicRoute';
@@ -207,6 +208,7 @@ function App() {
               path='order-history/:subOrderId'
               element={<CustomerOrderDetailPage />}
             />
+            <Route path='chat' element={<ChatPage />} />
           </Route>
         </Route>
 

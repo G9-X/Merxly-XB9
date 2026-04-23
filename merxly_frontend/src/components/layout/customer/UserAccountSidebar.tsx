@@ -7,6 +7,7 @@ import {
   UserCircleIcon,
   ArrowRightStartOnRectangleIcon,
   XMarkIcon,
+  ChatBubbleOvalLeftIcon,
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../../../contexts/AuthContext';
 
@@ -33,6 +34,11 @@ const navigationItems: NavItem[] = [
     name: 'Your Profile',
     path: '/user-account/profile',
     icon: UserCircleIcon,
+  },
+  {
+    name: 'AI Assistant',
+    path: '/user-account/chat',
+    icon: ChatBubbleOvalLeftIcon,
   },
 ];
 
