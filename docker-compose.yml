@@ -31,6 +31,8 @@ services:
       - StripeSettings__SecretKey=${STRIPE_SECRET_KEY}
       - StripeSettings__PublishableKey=${STRIPE_PUBLISHABLE_KEY}
       - StripeSettings__WebhookSecret=${STRIPE_WEBHOOK_SECRET}
+      - Bedrock__Region=${BEDROCK_REGION:-us-east-1}
+      - Bedrock__ModelId=${BEDROCK_MODEL_ID:-anthropic.claude-3-5-sonnet-20241022-v2:0}
     ports:
       - '7052:8080'
     depends_on:
