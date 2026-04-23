@@ -23,15 +23,12 @@
 
 1. **Product listing by category/filter/sort** 
 — Users browse category pages and retrieve active products by `category`, optional `price range`, and sort by newest or price 
-— **~120 calls/min peak**.
 
 2. **Place an order (checkout)**
   — Users submit checkout, and the system creates an order, inserts order items, updates stock in `ProductVariants`, and records payment state
-  — **~15 orders/min peak**.
 
 3. **Order history for one user**
   — Users open **My Orders** to fetch all their orders sorted by latest date, then view order details
-  — **~50 calls/min peak**.
 
 ### Part B: Query Specifications
 *(Mô tả các câu query hoặc thao tác dữ liệu cụ thể dùng để đáp ứng các Workflow ở Part A)*
