@@ -1,4 +1,4 @@
-import { PieChart } from '@mui/x-charts/PieChart';
+import { PieChart } from '@mui/x-charts';
 
 const categoryData = [
   { id: 0, value: 35000, label: 'Electronics' },
