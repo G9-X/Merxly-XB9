@@ -50,7 +50,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-          policy.WithOrigins("http://localhost:5173", "https://localhost:5173", "http://localhost", "http://localhost:7052", "https://merxly.vercel.app", "http://xbrain-static-i46zjt.s3-website-us-east-1.amazonaws.com", "https://d1q4dgcsrlyc0r.cloudfront.net", "https://app.group9.id.vn", "https://group9.id.vn", "https://dnws0mm9hulls.cloudfront.net")
+          policy.WithOrigins("http://localhost:5173", "https://localhost:5173", "http://localhost", "http://localhost:7052", "https://merxly.vercel.app", "https://xbrain-alb-us-dev-122585504.us-west-2.elb.amazonaws.com", "https://d1q4dgcsrlyc0r.cloudfront.net", "https://app.group9.id.vn", "https://group9.id.vn", "https://dnws0mm9hulls.cloudfront.net")
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
