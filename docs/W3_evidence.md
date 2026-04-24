@@ -59,7 +59,7 @@ Tại sao hiệu quả: Chỉ scan những orders thuộc về UserId cụ th
 ### Part C: Schema / Data Model
 
 Chọn Pattern 2 (Checkout) — nếu dùng DynamoDB (key-value paradigm) thay vì RDS MySQL:
-Checkout của Merxly cần ghi atomic vào 4 bảng liên quan (Orders, SubOrders, OrderItems, Payments) với foreign key integrity, nhưng DynamoDB TransactWriteItems giới hạn 100 items/4MB và không enforce foreign keys ở database level — nếu payment ghi thành công mà OrderItems fail ngoài transaction scope, data sẽ corrupt âm thầm (order tồn tại nhưng không có items, không có cơ chế rollback tự động). Thêm vào đó, để phục vụ Pattern 3 (order history với tên sản phẩm), key-value store buộc phải duplicate product name + price vào mọi OrderItem (stale khi product đổi tên) hoặc làm N+1 round trips cho mỗi order load — latency bùng nổ và RCU cost tăng theo cấp số. Relational paradigm xử lý 3 patterns này natively với ACID + JOIN, key-value buộc phải tái implement ACID ở application layer và đánh đổi correctness lấy scale mà Merxly chưa cần ở giai đoạn này.
+DynamoDB không có ACID transaction thật sự — nếu ghi Payment thành công nhưng OrderItems fail, hệ thống sẽ có payment đã trừ tiền nhưng order không có items, và không có cơ chế rollback tự động để hoàn tiền. Với Merxly là marketplace thu tiền thật, corrupt kiểu này là không chấp nhận được. RDS MySQL InnoDB đảm bảo all-or-nothing — payment chỉ được commit khi toàn bộ 4 bảng ghi thành công.
 
 ---
 
