@@ -21,42 +21,45 @@
 ### Part A: Application Workflow
 *(Mô tả các luồng truy cập dữ liệu chính của ứng dụng. Ví dụ: Người dùng vào xem sản phẩm, người dùng đặt hàng, cửa hàng xem thống kê...)*
 
-1. **Product listing by category/filter/sort** 
-— Users browse category pages and retrieve active products by `category`, optional `price range`, and sort by newest or price 
+1. **Pattern 1 →**
+Browse sản phẩm theo category — customer vào trang category, filter theo IsActive=true, sort theo CreatedAt DESC, phân trang 20 items/page, ~200 calls/ phút
 
-2. **Place an order (checkout)**
-  — Users submit checkout, and the system creates an order, inserts order items, updates stock in `ProductVariants`, and records payment state
+2. **Pattern 2 →**
+Đặt hàng (checkout) — 1 request ghi atomic vào 4 bảng: Orders (1 row) + SubOrders (N rows, 1/store) + OrderItems (M rows) + Payments (1 row) trong cùng 1 transaction, ~30 calls / phút
 
-3. **Order history for one user**
-  — Users open **My Orders** to fetch all their orders sorted by latest date, then view order details
+3. **Pattern 3 →**
+Order history của customer — customer xem lịch sử đơn hàng, JOIN Orders × SubOrders × OrderItems × Products để hiển thị tên sản phẩm + số lượng + giá, ~80 calls / phút
+
+
 
 ### Part B: Query Specifications
 *(Mô tả các câu query hoặc thao tác dữ liệu cụ thể dùng để đáp ứng các Workflow ở Part A)*
-1. **Pattern 1 →** RDS MySQL `Products` table, indexes on `CategoryId` and `(CategoryId, IsActive, MinPrice)`
-   — Filter by category + active status, then range scan by price  
-   — Supporting index on `CreatedAt` for sort by newest
+1. **Pattern 1 →** Browse sản phẩm theo category
 
-2. **Pattern 2 →** RDS MySQL `Orders`, `SubOrders`, `OrderItems`, `Payments`, `ProductVariants`
-   — InnoDB ACID transaction for checkout flow  
-   — PK/FK across `Orders -> SubOrders -> OrderItems`, payment linked by `Payments.OrderId`, stock updated in `ProductVariants.StockQuantity`
+Engine + Paradigm: RDS MySQL / Relational
+Mechanism: Composite index IX_Products_CategoryId_IsActive_MinPrice trên (CategoryId, IsActive, MinPrice) phục vụ cả 3 điều kiện WHERE + sort trong 1 lần đọc index. Query thực tế đo được type=ref, rows=1, filtered=100% (xác nhận bằng EXPLAIN ở Section 4).
+Tại sao hiệu quả: MySQL đọc thẳng trên B-tree index của CategoryId, không chạm tới data pages của các category khác → O(log n) thay vì O(n).
 
-3. **Pattern 3 →** RDS MySQL `Orders` table with index `(UserId, CreatedAt)`, plus `SubOrders(OrderId)` and `OrderItems(SubOrderId)`
-   — Fetch order history by user and sort by latest date without full scan  
-   — Expand order details through indexed foreign keys
+
+2. **Pattern 2 →**  Đặt hàng (Checkout)
+
+Engine + Paradigm: RDS MySQL / Relational
+Mechanism: ACID transaction qua 4 bảng: START TRANSACTION → INSERT Orders → INSERT SubOrders → INSERT OrderItems → INSERT Payments → COMMIT. Foreign key constraints (SubOrders.OrderId → Orders.Id, OrderItems.SubOrderId → SubOrders.Id) enforce referential integrity ở database level.
+Tại sao hiệu quả: Nếu payment fail ở bước cuối, toàn bộ rollback tự động → không bao giờ có order tồn tại mà thiếu items hoặc thiếu payment record. InnoDB row-level locking cho phép nhiều transaction chạy song song không block nhau.
+
+3. **Pattern 3 →** Order history của customer
+
+Engine + Paradigm: RDS MySQL / Relational
+Mechanism: JOIN query qua 4 bảng dùng index IX_Orders_UserId để filter orders của 1 user trước, sau đó nested loop join xuống SubOrders (qua IX_SubOrders_OrderId) → OrderItems (qua IX_OrderItems_SubOrderId) → Products (qua primary key lookup).
+Tại sao hiệu quả: Chỉ scan những orders thuộc về UserId cụ thể, không scan toàn bảng Orders (~hàng triệu rows). Index covering cho phép MySQL không cần đọc data pages của Orders.
+
+
+
 
 ### Part C: Schema / Data Model
-*(Đính kèm hình ảnh ERD (Entity Relationship Diagram) hoặc mô tả cấu trúc bảng (Table) của database)*
-Pick pattern #2 (place an order / checkout):  
-Nếu dùng **key-value store** làm database chính:
-— Checkout phải ghi vào nhiều entity: `Orders`, `SubOrders`, `OrderItems`, `Payments`, và cập nhật stock ở `ProductVariants`  
-— Không có relational integrity native nên application phải tự xử lý đồng bộ dữ liệu  
-— Dễ gặp trạng thái không nhất quán như: payment created but order details missing, hoặc stock chưa update sau khi tạo order  
 
-→ **Relational paradigm** phù hợp hơn vì:
-   - Có **ACID transaction** cho luồng checkout
-   - Có **foreign key** để đảm bảo integrity
-   - Hỗ trợ tốt multi-table write theo đúng schema hiện tại
-
+Chọn Pattern 2 (Checkout) — nếu dùng DynamoDB (key-value paradigm) thay vì RDS MySQL:
+Checkout của Merxly cần ghi atomic vào 4 bảng liên quan (Orders, SubOrders, OrderItems, Payments) với foreign key integrity, nhưng DynamoDB TransactWriteItems giới hạn 100 items/4MB và không enforce foreign keys ở database level — nếu payment ghi thành công mà OrderItems fail ngoài transaction scope, data sẽ corrupt âm thầm (order tồn tại nhưng không có items, không có cơ chế rollback tự động). Thêm vào đó, để phục vụ Pattern 3 (order history với tên sản phẩm), key-value store buộc phải duplicate product name + price vào mọi OrderItem (stale khi product đổi tên) hoặc làm N+1 round trips cho mỗi order load — latency bùng nổ và RCU cost tăng theo cấp số. Relational paradigm xử lý 3 patterns này natively với ACID + JOIN, key-value buộc phải tái implement ACID ở application layer và đánh đổi correctness lấy scale mà Merxly chưa cần ở giai đoạn này.
 
 ---
 
@@ -65,6 +68,7 @@ Nếu dùng **key-value store** làm database chính:
 
 ### Criterion 1: Database Provisioning
 ![DB Console Screenshot](./images/3_deployment/db-provisioning-screenshot.png)
+
 > **Note:** We configured RDS MySQL with `multi-az=true` and a specific instance class to ensure high availability and right-sizing for our development environment.
 
 ### Criterion 2: Security & Encryption
@@ -80,18 +84,17 @@ Nếu dùng **key-value store** làm database chính:
 ## (4) Working Query Evidence
 *(1 operation phù hợp với paradigm - ở đây là Relational JOIN, kèm theo kết quả `EXPLAIN` để show index)*
 
-**Query:**
-```sql
--- Ví dụ câu lệnh JOIN
-SELECT p.Name, c.Name as Category 
-FROM Products p 
-JOIN Categories c ON p.CategoryId = c.Id
-WHERE p.IsActive = 1;
-```
+Screenshot 1 — Configuration (Encryption + Multi-AZ)
+Encryption: Enabled với AWS-managed KMS key (aws/rds). Chọn AWS-managed thay vì customer CMK vì không có compliance mandate và muốn automatic key rotation. Multi-AZ: Yes với Secondary Zone us-west-2a — nếu primary (us-west-2b) fail, RDS tự động failover mà không cần manual intervention.
 
-**Explain Plan / Index Usage:**
 ![Explain Plan Screenshot](./images/4_query/explain-plan.png)
-> **Note:** The `EXPLAIN` output shows that the database engine utilizes the index on `CategoryId`, avoiding a full table scan and optimizing query performance.
+
+Screenshot 2 — Maintenance & Backups
+Automated backups: Enabled (7 Days) — đủ để point-in-time restore về bất kỳ thời điểm nào trong tuần qua. Latest restore time: April 24, 2026 01:24 UTC+7 xác nhận backup đang hoạt động. Có 2 automated snapshots available làm safety net bổ sung.
+
+![Explain Plan Screenshot 2](./images/4_query/explain-plan2.png)
+
+
 
 ---
 
@@ -116,6 +119,7 @@ WHERE p.IsActive = 1;
 *(Bằng chứng về bảo mật mạng: Route table có S3 Gateway Endpoint & Inbound rule của Database Security Group)*
 
 **Database Security Group Inbound Rule:**
+
 ![DB SG Screenshot](./images/6_networking/db-sg.png)
 > **Note:** The RDS security group restricts inbound traffic on port 3306 exclusively to the Backend Application Security Group, denying all direct public access.
 
@@ -127,6 +131,8 @@ WHERE p.IsActive = 1;
 
 ## (7) Negative Security Test
 *(Bằng chứng về việc hệ thống từ chối truy cập trái phép)*
+
+EC2 được sử dụng để thử kết nối TCP đến endpoint Amazon RDS MySQL qua cổng 3306 bằng lệnh socket. Kết nối đã bị Security Group chặn và dẫn đến timeout, xác nhận truy cập trái phép không được phép.
 
 ![Connection Denied Screenshot](./images/7_security/connection-denied.png)
 > **Note:** We attempted to connect directly to the RDS instance using MySQL Workbench from a public IP address. The connection timed out / was rejected because the instance is in a private subnet and the Security Group does not allow external IP addresses.
@@ -140,5 +146,10 @@ WHERE p.IsActive = 1;
   ```bash
   terraform validate
   # Hoặc aws cloudformation validate-template ...
+  
   ```
+  
+  ![Bonus Terraform](./images/8_bonus/terraform_validate.png)
+  
 * **Git Commit Link:** [Link tới commit chứa file template IaC trên GitHub]
+LINK: https://github.com/G9-X/Terraform-G9
