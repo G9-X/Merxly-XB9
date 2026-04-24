@@ -132,9 +132,14 @@ Automated backups: Enabled (7 Days) — đủ để point-in-time restore về b
 ## (7) Negative Security Test
 *(Bằng chứng về việc hệ thống từ chối truy cập trái phép)*
 
-EC2 được sử dụng để thử kết nối TCP đến endpoint Amazon RDS MySQL qua cổng 3306 bằng lệnh socket. Kết nối đã bị Security Group chặn và dẫn đến timeout, xác nhận truy cập trái phép không được phép.
+Test 1: Một EC2 được sử dụng để thử kết nối TCP đến endpoint Amazon RDS MySQL qua cổng 3306 bằng lệnh socket. Kết nối đã bị Security Group chặn và dẫn đến timeout, xác nhận truy cập trái phép không được phép.
 
-![Connection Denied Screenshot](./images/7_security/connection-denied.png)
+![Connection Denied Screenshot 1](./images/7_security/connection-denied-test1.png)
+
+
+Test 2: EC2 được sử dụng để thử kết nối TCP đến endpoint Amazon RDS MySQL qua cổng 3306 bằng lệnh socket. Kết nối đã bị Security Group chặn và dẫn đến timeout, xác nhận truy cập trái phép không được phép.
+
+![Connection Denied Screenshot 2](./images/7_security/connection-denied-test2.png)
 > **Note:** We attempted to connect directly to the RDS instance using MySQL Workbench from a public IP address. The connection timed out / was rejected because the instance is in a private subnet and the Security Group does not allow external IP addresses.
 
 ---
