@@ -167,6 +167,8 @@ Test 2: EC2 thử kết nối tới RDS MySQL qua SSL nhưng bị lỗi 2003 (co
   
   ![Bonus Terraform](./images/8_bonus/terraform_validate.png)
   ![Bonus Terraform 2](./images/8_bonus/terraform_output.png)
-  
+  ![Bonus Terraform 3](./images/8_bonus/Screenshot 2026-04-24 103729.png)
+  ![Bonus Terraform 4](./images/8_bonus/Screenshot 2026-04-24 103207.png)
+ 
 * **Git Commit Link:** [Link tới commit chứa file template IaC trên GitHub]
 LINK: https://github.com/G9-X/Terraform-G9
