@@ -34,6 +34,7 @@ Order history của customer — customer xem lịch sử đơn hàng, JOIN Orde
 
 ### Part B: Query Specifications
 *(Mô tả các câu query hoặc thao tác dữ liệu cụ thể dùng để đáp ứng các Workflow ở Part A)*
+
 Pattern 1 — Browse sản phẩm theo Category
 Engine: RDS MySQL / Relational
 
