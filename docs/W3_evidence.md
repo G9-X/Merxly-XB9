@@ -34,24 +34,33 @@ Order history của customer — customer xem lịch sử đơn hàng, JOIN Orde
 
 ### Part B: Query Specifications
 *(Mô tả các câu query hoặc thao tác dữ liệu cụ thể dùng để đáp ứng các Workflow ở Part A)*
-1. **Pattern 1 →** Browse sản phẩm theo category
+Pattern 1 — Browse sản phẩm theo Category
+Engine: RDS MySQL / Relational
 
-Engine + Paradigm: RDS MySQL / Relational
-Mechanism: Composite index IX_Products_CategoryId_IsActive_MinPrice trên (CategoryId, IsActive, MinPrice) phục vụ cả 3 điều kiện WHERE + sort trong 1 lần đọc index. Query thực tế đo được type=ref, rows=1, filtered=100% (xác nhận bằng EXPLAIN ở Section 4).
-Tại sao hiệu quả: MySQL đọc thẳng trên B-tree index của CategoryId, không chạm tới data pages của các category khác → O(log n) thay vì O(n).
+Cơ chế: Dùng composite index IX_Products_CategoryId_IsActive_MinPrice → MySQL đọc thẳng trên B-tree, không scan toàn bảng
 
+Kết quả đo được: type=ref, rows=1, filtered=100%
 
-2. **Pattern 2 →**  Đặt hàng (Checkout)
+Hiệu quả: O(log n) thay vì O(n)
 
-Engine + Paradigm: RDS MySQL / Relational
-Mechanism: ACID transaction qua 4 bảng: START TRANSACTION → INSERT Orders → INSERT SubOrders → INSERT OrderItems → INSERT Payments → COMMIT. Foreign key constraints (SubOrders.OrderId → Orders.Id, OrderItems.SubOrderId → SubOrders.Id) enforce referential integrity ở database level.
-Tại sao hiệu quả: Nếu payment fail ở bước cuối, toàn bộ rollback tự động → không bao giờ có order tồn tại mà thiếu items hoặc thiếu payment record. InnoDB row-level locking cho phép nhiều transaction chạy song song không block nhau.
+Pattern 2 — Checkout / Đặt hàng
+Engine: RDS MySQL / Relational
 
-3. **Pattern 3 →** Order history của customer
+Cơ chế: ACID Transaction qua 4 bảng:
 
-Engine + Paradigm: RDS MySQL / Relational
-Mechanism: JOIN query qua 4 bảng dùng index IX_Orders_UserId để filter orders của 1 user trước, sau đó nested loop join xuống SubOrders (qua IX_SubOrders_OrderId) → OrderItems (qua IX_OrderItems_SubOrderId) → Products (qua primary key lookup).
-Tại sao hiệu quả: Chỉ scan những orders thuộc về UserId cụ thể, không scan toàn bảng Orders (~hàng triệu rows). Index covering cho phép MySQL không cần đọc data pages của Orders.
+START TRANSACTION
+→ INSERT Orders → SubOrders → OrderItems → Payments
+→ COMMIT  (hoặc ROLLBACK nếu lỗi)
+FK constraints enforce integrity ở database level
+
+Hiệu quả: Payment fail → rollback toàn bộ, không bao giờ có order thiếu items. InnoDB row-level locking cho phép nhiều user checkout song song
+
+Pattern 3 — Order History của Customer
+Engine: RDS MySQL / Relational
+
+Cơ chế: JOIN 4 bảng, filter bằng IX_Orders_UserId trước → nested loop join xuống SubOrders → OrderItems → Products qua primary key
+
+Hiệu quả: Chỉ scan orders của 1 user, không đụng đến hàng triệu rows còn lại
 
 
 
