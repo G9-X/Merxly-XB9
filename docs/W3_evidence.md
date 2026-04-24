@@ -149,7 +149,10 @@ EC2 được sử dụng để thử kết nối TCP đến endpoint Amazon RDS 
   
   ```
   
+ 
+  
   ![Bonus Terraform](./images/8_bonus/terraform_validate.png)
+  ![Bonus Terraform 2](./images/8_bonus/terraform_output.png)
   
 * **Git Commit Link:** [Link tới commit chứa file template IaC trên GitHub]
 LINK: https://github.com/G9-X/Terraform-G9
