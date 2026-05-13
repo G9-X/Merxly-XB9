@@ -1,0 +1,214 @@
+name: Merxly CI/CD
+
+on:
+  push:
+    branches: ["main", "develop"]
+    paths:
+      - "merxly_backend/**"
+      - "be/**"
+      - "merxly_frontend/**"
+      - "fe/**"
+      - ".github/workflows/merxly-ci-cd.yml"
+  pull_request:
+    branches: ["main", "develop"]
+    paths:
+      - "merxly_backend/**"
+      - "be/**"
+      - "merxly_frontend/**"
+      - "fe/**"
+      - ".github/workflows/merxly-ci-cd.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  filter:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'merxly_backend/**'
+              - 'be/**'
+            frontend:
+              - 'merxly_frontend/**'
+              - 'fe/**'
+
+  backend:
+    name: Backend CI/CD
+    needs: filter
+    if: ${{ needs.filter.outputs.backend == 'true' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_REGION: ${{ vars.WORKSHOP_AWS_REGION }}
+      AWS_ROLE_ARN: ${{ vars.WORKSHOP_AWS_ROLE_ARN }}
+      ECS_CLUSTER_NAME: ${{ vars.WORKSHOP_ECS_CLUSTER_NAME }}
+      ECS_SERVICE_NAME: ${{ vars.WORKSHOP_ECS_SERVICE_NAME }}
+      ECS_TASK_FAMILY: ${{ vars.WORKSHOP_ECS_TASK_FAMILY }}
+      ECR_REPOSITORY_NAME: ${{ vars.WORKSHOP_ECR_REPOSITORY_NAME }}
+      BACKEND_CONTAINER_NAME: ${{ vars.WORKSHOP_BACKEND_CONTAINER_NAME || 'backend' }}
+      RUN_DB_MIGRATION: ${{ vars.WORKSHOP_RUN_DB_MIGRATION || 'false' }}
+      DB_CONNECTION_STRING: ${{ secrets.WORKSHOP_BACKEND_DB_CONNECTION_STRING }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect backend solution
+        id: detect_backend
+        run: |
+          if [ -d "be" ]; then
+            backend_dir="be"
+          elif [ -d "merxly_backend" ]; then
+            backend_dir="merxly_backend"
+          else
+            echo "Cannot find backend folder." >&2
+            exit 1
+          fi
+          sln_path=$(find "$backend_dir" -maxdepth 2 -name "*.sln" | head -n 1)
+          api_csproj="$backend_dir/merxly.API/merxly.API.csproj"
+          infra_csproj="$backend_dir/merxly.Infrastructure/merxly.Infrastructure.csproj"
+          
+          echo "backend_dir=$backend_dir" >> "$GITHUB_OUTPUT"
+          echo "sln_path=$sln_path" >> "$GITHUB_OUTPUT"
+          echo "api_csproj=$api_csproj" >> "$GITHUB_OUTPUT"
+          echo "infra_csproj=$infra_csproj" >> "$GITHUB_OUTPUT"
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restore & Build & Test
+        run: |
+          dotnet restore "${{ steps.detect_backend.outputs.sln_path }}"
+          dotnet build "${{ steps.detect_backend.outputs.sln_path }}" --configuration Release --no-restore
+          dotnet test "${{ steps.detect_backend.outputs.sln_path }}" --configuration Release --no-build
+
+      - name: Configure AWS credentials
+        if: github.event_name != 'pull_request'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          role-session-name: gha-merxly-backend
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        if: github.event_name != 'pull_request'
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push backend image
+        if: github.event_name != 'pull_request'
+        id: image
+        run: |
+          set -e
+          REGISTRY="${{ steps.login-ecr.outputs.registry }}"
+          IMAGE_URI="$REGISTRY/$ECR_REPOSITORY_NAME:${GITHUB_SHA::12}"
+          docker build -t "$IMAGE_URI" -t "$REGISTRY/$ECR_REPOSITORY_NAME:latest" "${{ steps.detect_backend.outputs.backend_dir }}"
+          docker push "$IMAGE_URI"
+          docker push "$REGISTRY/$ECR_REPOSITORY_NAME:latest"
+          echo "image_uri=$IMAGE_URI" >> "$GITHUB_OUTPUT"
+
+      - name: Run DB migration
+        if: env.RUN_DB_MIGRATION == 'true' && github.event_name != 'pull_request'
+        run: |
+          dotnet tool install --global dotnet-ef --version 8.*
+          export ConnectionStrings__DefaultConnection="$DB_CONNECTION_STRING"
+          dotnet ef database update --project "${{ steps.detect_backend.outputs.infra_csproj }}" --startup-project "${{ steps.detect_backend.outputs.api_csproj }}"
+
+      - name: Deploy to ECS
+        if: github.event_name != 'pull_request'
+        run: |
+          set -e
+          aws ecs describe-task-definition --task-definition "$ECS_TASK_FAMILY" --query taskDefinition > taskdef.json
+          jq --arg IMAGE "${{ steps.image.outputs.image_uri }}" --arg NAME "$BACKEND_CONTAINER_NAME" '
+            {
+                family,
+                taskRoleArn,
+                executionRoleArn,
+                networkMode,
+                containerDefinitions,
+                volumes,
+                placementConstraints,
+                requiresCompatibilities,
+                cpu,
+                memory,
+                runtimePlatform,
+                proxyConfiguration,
+                ipcMode,
+                pidMode,
+                inferenceAccelerators,
+                ephemeralStorage
+            }
+            | .containerDefinitions = (.containerDefinitions | map(if .name == $NAME then .image = $IMAGE else . end))
+            | with_entries(select(.value != null))
+          ' taskdef.json > new-taskdef.json
+          
+          NEW_TASKDEF_ARN=$(aws ecs register-task-definition --cli-input-json file://new-taskdef.json --query 'taskDefinition.taskDefinitionArn' --output text)
+          aws ecs update-service --cluster "$ECS_CLUSTER_NAME" --service "$ECS_SERVICE_NAME" --task-definition "$NEW_TASKDEF_ARN"
+          aws ecs wait services-stable --cluster "$ECS_CLUSTER_NAME" --services "$ECS_SERVICE_NAME"
+
+  frontend:
+    name: Frontend CI/CD
+    needs: filter
+    if: ${{ needs.filter.outputs.frontend == 'true' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect frontend directory
+        id: detect_frontend
+        run: |
+          if [ -d "fe" ]; then echo "dir=fe" >> "$GITHUB_OUTPUT";
+          elif [ -d "merxly_frontend" ]; then echo "dir=merxly_frontend" >> "$GITHUB_OUTPUT";
+          else exit 1; fi
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: "${{ steps.detect_frontend.outputs.dir }}/package-lock.json"
+
+      - name: Build
+        working-directory: ${{ steps.detect_frontend.outputs.dir }}
+        env:
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+          VITE_GOOGLE_CLIENT_ID: ${{ vars.VITE_GOOGLE_CLIENT_ID }}
+          VITE_STRIPE_PUBLISHABLE_KEY: ${{ vars.VITE_STRIPE_PUBLISHABLE_KEY }}
+        run: |
+          npm ci
+          npm run build
+
+      - name: Configure AWS credentials
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.FRONTEND_AWS_ROLE_ARN }}
+          role-session-name: gha-merxly-frontend
+          aws-region: ${{ vars.WORKSHOP_AWS_REGION }}
+
+      - name: Deploy to S3
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+        run: |
+          aws s3 sync ${{ steps.detect_frontend.outputs.dir }}/dist/ s3://${{ secrets.S3_BUCKET_NAME }} --delete
+          if [ -n "${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}" ]; then
+            aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
+          fi
