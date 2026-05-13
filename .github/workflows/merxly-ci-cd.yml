@@ -198,7 +198,7 @@ jobs:
           npm run build
 
       - name: Configure AWS credentials
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+        if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'))
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.FRONTEND_AWS_ROLE_ARN }}
@@ -206,7 +206,7 @@ jobs:
           aws-region: ${{ vars.WORKSHOP_AWS_REGION }}
 
       - name: Deploy to S3
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+        if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'))
         run: |
           aws s3 sync ${{ steps.detect_frontend.outputs.dir }}/dist/ s3://${{ secrets.S3_BUCKET_NAME }} --delete
           if [ -n "${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}" ]; then
