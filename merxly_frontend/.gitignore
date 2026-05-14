@@ -29,3 +29,9 @@ dist-ssr
 
 # AI
 AI_PROJECT_CONTEXT.md
+
+# Playwright
+e2e/.auth/
+test-results/
+playwright-report/
+blob-report/

@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import apiClient from '../services/apiClient';
+import { registerUnauthorizedHandler } from '../services/apiClient';
 import type { LoginResponse } from '../types/api/auth';
 
 interface AuthContextType {
@@ -54,6 +55,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = () => {
     handleSetUser(null);
   };
+
+  useEffect(() => {
+    registerUnauthorizedHandler(logout);
+  }, []);
 
   const updateUser = (userData: Partial<LoginResponse>) => {
     if (user) {

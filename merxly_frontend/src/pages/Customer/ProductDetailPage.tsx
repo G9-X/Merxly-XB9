@@ -1,6 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import DOMPurify from 'dompurify';
 import {
   HeartIcon,
   ArrowsRightLeftIcon,
@@ -45,7 +46,13 @@ export const ProductDetailPage = () => {
   // Track selected variant
   const [selectedVariant, setSelectedVariant] = useState<
     ProductVariantForCustomerDto | undefined
-  >(() => product?.variants.find((v) => v.isActive));
+  >();
+
+  useEffect(() => {
+    if (product?.variants && !selectedVariant) {
+      setSelectedVariant(product.variants.find((v) => v.isActive));
+    }
+  }, [product?.variants, selectedVariant]);
 
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -339,7 +346,7 @@ export const ProductDetailPage = () => {
               </h3>
               <div
                 className='text-neutral-700 prose prose-sm max-w-none'
-                dangerouslySetInnerHTML={{ __html: product.description }}
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(product.description) }}
               />
             </div>
           )}
