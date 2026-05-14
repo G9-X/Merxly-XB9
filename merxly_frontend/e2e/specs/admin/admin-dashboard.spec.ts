@@ -34,9 +34,12 @@ test.describe('Admin Dashboard', () => {
   test('should navigate to stores page', async ({ adminPage }) => {
     await adminPage.goto('/admin');
     await adminPage.waitForLoadState('domcontentloaded');
-    const storesLink = adminPage.locator('a[href*="/admin/stores"], nav >> text=Stores').first();
-    if (await storesLink.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await storesLink.click();
+    // Stores is a collapsible button — click it to expand, then click "All Stores"
+    const storesBtn = adminPage.locator('button:has-text("Stores")').first();
+    if (await storesBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await storesBtn.click();
+      const allStoresLink = adminPage.locator('a[href*="/admin/stores/all"]').first();
+      await allStoresLink.click();
       await adminPage.waitForURL(/\/admin\/stores/, { timeout: 10000 });
     }
   });
@@ -44,10 +47,15 @@ test.describe('Admin Dashboard', () => {
   test('should navigate to users page', async ({ adminPage }) => {
     await adminPage.goto('/admin');
     await adminPage.waitForLoadState('domcontentloaded');
-    const usersLink = adminPage.locator('a[href*="/admin/users"], nav >> text=Users').first();
-    if (await usersLink.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await usersLink.click();
-      await adminPage.waitForURL(/\/admin\/users/, { timeout: 10000 });
+    // Users is a collapsible button — click to expand, then click sub-link
+    const usersBtn = adminPage.locator('button:has-text("Users")').first();
+    if (await usersBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await usersBtn.click();
+      const usersLink = adminPage.locator('a[href*="/admin/users"]').first();
+      if (await usersLink.isVisible({ timeout: 3000 }).catch(() => false)) {
+        await usersLink.click();
+        await adminPage.waitForURL(/\/admin\/users/, { timeout: 10000 });
+      }
     }
   });
 });

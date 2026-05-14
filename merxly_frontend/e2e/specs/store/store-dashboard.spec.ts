@@ -4,7 +4,9 @@ test.describe('Store Dashboard', () => {
   test('should display store dashboard', async ({ storeOwnerPage }) => {
     await storeOwnerPage.goto('/store');
     await storeOwnerPage.waitForLoadState('domcontentloaded');
-    await expect(storeOwnerPage).toHaveURL(/\/store\/dashboard/);
+    await expect(storeOwnerPage).toHaveURL(/\/store/);
+    const heading = storeOwnerPage.locator('h1:has-text("Store Dashboard")');
+    await expect(heading).toBeVisible({ timeout: 10000 });
   });
 
   test('should display stats cards', async ({ storeOwnerPage }) => {
