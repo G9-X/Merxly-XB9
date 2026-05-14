@@ -10,6 +10,11 @@ const RAW_API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || 'https://localhost:7052/api';
 const API_BASE_URL = normalizeBaseUrl(RAW_API_BASE_URL);
 
+let onUnauthorized: (() => void) | null = null;
+export const registerUnauthorizedHandler = (fn: () => void) => {
+  onUnauthorized = fn;
+};
+
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -22,6 +27,7 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
+      onUnauthorized?.();
       localStorage.removeItem('auth');
       delete apiClient.defaults.headers.common['Authorization'];
       if (window.location.pathname !== '/login') {

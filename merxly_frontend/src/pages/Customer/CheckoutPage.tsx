@@ -67,6 +67,18 @@ export const CheckoutPage = () => {
     }
   }, [paymentMethods, isLoadingPaymentMethods, selectedPaymentMethod]);
 
+  const handleAddressChange = (address: CustomerAddressDto) => {
+    setSelectedAddress(address);
+    setPendingClientSecret(null);
+    setPendingOrder(null);
+  };
+
+  const handlePaymentMethodChange = (method: PaymentMethodDto) => {
+    setSelectedPaymentMethod(method);
+    setPendingClientSecret(null);
+    setPendingOrder(null);
+  };
+
   const handleStoreNoteChange = (storeId: string, note: string) => {
     setStoreNotes((prev) => ({
       ...prev,
@@ -167,12 +179,12 @@ export const CheckoutPage = () => {
         <div className='lg:col-span-2 space-y-6'>
           <ShippingSection
             selectedAddress={selectedAddress}
-            onSelectAddress={setSelectedAddress}
+            onSelectAddress={handleAddressChange}
           />
 
           <PaymentSection
             selectedPaymentMethod={selectedPaymentMethod}
-            onSelectPaymentMethod={setSelectedPaymentMethod}
+            onSelectPaymentMethod={handlePaymentMethodChange}
           />
         </div>
 

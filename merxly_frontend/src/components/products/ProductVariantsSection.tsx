@@ -167,7 +167,7 @@ export const ProductVariantsSection = forwardRef<
       if (attributes.length >= 3) return;
 
       const newAttr: Attribute = {
-        id: `attr-${Date.now()}`,
+        id: `local-attr-${Date.now()}`,
         name: '',
         values: [{ id: `val-${Date.now()}`, value: '' }],
       };
@@ -273,7 +273,7 @@ export const ProductVariantsSection = forwardRef<
     // Delete attribute
     const handleDeleteAttribute = (id: string) => {
       // Track deletion for backend if in edit mode and attribute exists
-      if (isEditMode && !id.startsWith('attr-') && onDeleteAttribute) {
+      if (isEditMode && !id.startsWith('local-attr-') && onDeleteAttribute) {
         onDeleteAttribute(id);
       }
 
