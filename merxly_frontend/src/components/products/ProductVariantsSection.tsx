@@ -273,7 +273,7 @@ export const ProductVariantsSection = forwardRef<
     // Delete attribute
     const handleDeleteAttribute = (id: string) => {
       // Track deletion for backend if in edit mode and attribute exists
-      if (isEditMode && !id.startsWith('attr-new-') && onDeleteAttribute) {
+      if (isEditMode && !id.startsWith('attr-') && onDeleteAttribute) {
         onDeleteAttribute(id);
       }
 

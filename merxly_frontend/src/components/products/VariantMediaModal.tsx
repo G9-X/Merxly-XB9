@@ -80,6 +80,10 @@ export const VariantMediaModal = ({
     },
   });
 
+  // Track mediaFiles in a ref for cleanup without adding to effect deps
+  const mediaFilesRef = useRef<MediaFile[]>([]);
+  mediaFilesRef.current = mediaFiles;
+
   // Convert CreateProductVariantMediaDto to MediaFile for display
   useEffect(() => {
     if (isOpen) {
@@ -104,6 +108,12 @@ export const VariantMediaModal = ({
       } else {
         setMediaFiles([]);
       }
+    } else {
+      mediaFilesRef.current.forEach((media) => {
+        if (media.file && media.preview) {
+          URL.revokeObjectURL(media.preview);
+        }
+      });
     }
   }, [isOpen, initialFiles]);
 
@@ -239,6 +249,10 @@ export const VariantMediaModal = ({
         setError('Failed to delete media. Please try again.');
         return;
       }
+    }
+
+    if (media.file && media.preview) {
+      URL.revokeObjectURL(media.preview);
     }
 
     const updatedFiles = mediaFiles.filter((f) => f.id !== media.id);

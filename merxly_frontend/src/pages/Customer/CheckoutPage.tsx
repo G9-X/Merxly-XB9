@@ -35,6 +35,10 @@ export const CheckoutPage = () => {
   const [selectedPaymentMethod, setSelectedPaymentMethod] =
     useState<PaymentMethodDto | null>(null);
   const [storeNotes, setStoreNotes] = useState<Record<string, string>>({});
+  const [pendingClientSecret, setPendingClientSecret] = useState<string | null>(
+    null,
+  );
+  const [pendingOrder, setPendingOrder] = useState<unknown>(null);
 
   // Redirect if no items
   useEffect(() => {
@@ -77,32 +81,44 @@ export const CheckoutPage = () => {
     }
 
     try {
-      const checkoutRequest = {
-        items: selectedItems.map((item) => ({
-          productVariantId: item.productVariantId,
-          quantity: item.quantity,
-        })),
-        shippingAddressId: selectedAddress.id,
-        paymentMethodId: selectedPaymentMethod.id,
-        storeNotes: Object.keys(storeNotes).length > 0 ? storeNotes : null,
-      };
+      let clientSecret = pendingClientSecret;
+      let order = pendingOrder;
 
-      const response = await processCheckout(checkoutRequest);
+      if (!clientSecret) {
+        const checkoutRequest = {
+          items: selectedItems.map((item) => ({
+            productVariantId: item.productVariantId,
+            quantity: item.quantity,
+          })),
+          shippingAddressId: selectedAddress.id,
+          paymentMethodId: selectedPaymentMethod.id,
+          storeNotes: Object.keys(storeNotes).length > 0 ? storeNotes : null,
+        };
 
-      if (!response.data) {
-        toast.error('Checkout failed. Please try again.');
-        return;
+        const response = await processCheckout(checkoutRequest);
+
+        if (!response.data) {
+          toast.error('Checkout failed. Please try again.');
+          return;
+        }
+
+        clientSecret = response.data.clientSecret;
+        order = response.data.order;
+        setPendingClientSecret(clientSecret);
+        setPendingOrder(order);
       }
 
-      // Confirm payment with Stripe
-      const { error } = await stripe.confirmCardPayment(
-        response.data.clientSecret,
-      );
+      // Confirm payment with Stripe (reuses existing PaymentIntent on retry)
+      const { error } = await stripe.confirmCardPayment(clientSecret);
 
       if (error) {
         toast.error(`Payment failed: ${error.message}`);
         return;
       }
+
+      // Payment succeeded — clear pending state
+      setPendingClientSecret(null);
+      setPendingOrder(null);
 
       // Remove only the checked out items from cart (skip items from Buy Now with empty IDs)
       const cartItemsToRemove = selectedItems.filter((item) => item.id);
@@ -114,12 +130,13 @@ export const CheckoutPage = () => {
 
       // Navigate to order confirmation
       navigate('/order-confirmation', {
-        state: { order: response.data.order },
+        state: { order },
         replace: true,
       });
     } catch (error) {
-      console.error('Checkout error:', error);
-      toast.error(`Checkout failed. Please try again. ${error}`);
+      toast.error(
+        `Checkout failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
     }
   };
 
