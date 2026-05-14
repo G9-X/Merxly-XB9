@@ -1,3 +1,5 @@
+using System.IO;
+using System.Text;
 using merxly.Application.DTOs.Common;
 using merxly.Application.DTOs.Order;
 using merxly.Application.Interfaces.Repositories;
@@ -21,6 +23,48 @@ namespace merxly.API.Controllers
         {
             _storeOrderService = storeOrderService;
             _storeRepository = storeRepository;
+        }
+
+        /// <summary>
+        /// Export orders to a CSV file stored on EFS for Week 5 evidence.
+        /// Path: /mnt/efs/exports/orders.csv
+        /// </summary>
+        [HttpPost("export")]
+        public async Task<ActionResult<ResponseDto<string>>> ExportOrders(CancellationToken cancellationToken = default)
+        {
+            var storeId = await GetStoreIdForCurrentUserAsync(_storeRepository, cancellationToken);
+            if (storeId == null) return ForbiddenResponse<string>();
+
+            // Get the first 100 orders for export
+            var filter = new StoreSubOrderFilterDto { PageNumber = 1, PageSize = 100 };
+            var result = await _storeOrderService.GetStoreOrdersAsync(storeId.Value, filter, cancellationToken);
+
+            var exportDir = "/mnt/efs/exports";
+            var filePath = Path.Combine(exportDir, $"orders_{DateTime.UtcNow:yyyyMMdd}.csv");
+
+            try
+            {
+                if (!Directory.Exists(exportDir))
+                {
+                    Directory.CreateDirectory(exportDir);
+                }
+
+                var csv = new StringBuilder();
+                csv.AppendLine("OrderNumber,Customer,Total,Status,CreatedAt");
+
+                foreach (var order in result.Items)
+                {
+                    csv.AppendLine($"{order.SubOrderNumber},{order.CustomerName},{order.TotalAmount},{order.Status},{order.CreatedAt}");
+                }
+
+                await System.IO.File.WriteAllTextAsync(filePath, csv.ToString(), Encoding.UTF8, cancellationToken);
+
+                return OkResponse(filePath, $"Orders exported successfully to {filePath}");
+            }
+            catch (Exception ex)
+            {
+                return BadRequestResponse<string>($"Failed to export: {ex.Message}");
+            }
         }
 
         /// <summary>
