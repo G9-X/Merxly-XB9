@@ -50,11 +50,11 @@ namespace merxly.API.Controllers
                 }
 
                 var csv = new StringBuilder();
-                csv.AppendLine("OrderNumber,Customer,Total,Status,CreatedAt");
+                csv.AppendLine("OrderNumber,Customer,Email,TotalItems,Total,Status,CreatedAt");
 
                 foreach (var order in result.Items)
                 {
-                    csv.AppendLine($"{order.SubOrderNumber},{order.CustomerName},{order.TotalAmount},{order.Status},{order.CreatedAt}");
+                    csv.AppendLine($"{order.SubOrderNumber},{order.CustomerFullName},{order.CustomerEmail},{order.TotalItems},{order.TotalAmount},{order.Status},{order.CreatedAt}");
                 }
 
                 await System.IO.File.WriteAllTextAsync(filePath, csv.ToString(), Encoding.UTF8, cancellationToken);
