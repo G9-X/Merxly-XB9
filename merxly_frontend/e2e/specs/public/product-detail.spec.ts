@@ -4,11 +4,12 @@ test.describe('Product Detail Page', () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to search first to find a product
     await page.goto('/search');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     const productLink = page.locator('a[href*="/products/"]').first();
     if (await productLink.isVisible({ timeout: 10000 }).catch(() => false)) {
       await productLink.click();
-      await page.waitForURL(/\/products\/.+/);
+      await page.waitForURL(/\/products\/.+/, { timeout: 10000 });
+      await page.waitForTimeout(2000);
     } else {
       test.skip(true, 'No products available in database');
     }
@@ -40,7 +41,7 @@ test.describe('Product Detail Page', () => {
   test('should display product attributes/variants if available', async ({ page }) => {
     const attributes = page.locator('[class*="variant"], [class*="attribute"], [data-testid*="variant"], button[class*="size"], button[class*="color"]');
     // Some products may not have variants — just verify page renders without errors
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
   });
 
   test('should display store info', async ({ page }) => {
@@ -51,7 +52,7 @@ test.describe('Product Detail Page', () => {
 
   test('should display reviews section', async ({ page }) => {
     const reviewsSection = page.locator('[class*="review"], :text("Review"), :text("Rating")').first();
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     // Reviews section presence check — may be empty if no reviews
   });
 

@@ -16,14 +16,14 @@ test.describe('Home Page', () => {
   });
 
   test('should display product cards or featured content', async ({ page }) => {
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     const hasProducts = await page.locator('[class*="product"], [class*="card"], [data-testid*="product"]').first().isVisible({ timeout: 10000 }).catch(() => false);
     const hasContent = await page.locator('main, [role="main"]').first().isVisible().catch(() => true);
     expect(hasProducts || hasContent).toBeTruthy();
   });
 
   test('should navigate to product detail on product click', async ({ page }) => {
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     const productCard = page.locator('a[href*="/products/"]').first();
     if (await productCard.isVisible({ timeout: 5000 }).catch(() => false)) {
       await productCard.click();
