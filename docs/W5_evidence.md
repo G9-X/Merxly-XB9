@@ -19,11 +19,11 @@
 
 ### 1. VPC Endpoints (Interface & Gateway)
 ![VPC Endpoints Screenshot](./images/w5/mh1/vpc-endpoints.png)
-> **Note:** Chúng tôi đã cấu hình VPC Endpoints cho `ecr.api`, `ecr.dkr`, `logs`, `secretsmanager`, `elasticfilesystem` (Interface) và `s3` (Gateway).
+> **Note:** Cấu hình VPC Endpoints để giảm lưu lượng đi qua NAT Gateway.
 
 ### 2. Network Firewall / Security Groups
 ![Network Firewall Screenshot](./images/w5/mh2/firewall-sg.png)
-> **Note:** Hệ thống sử dụng Security Groups kiểm soát chặt chẽ (ECS chỉ nhận từ ALB, RDS/EFS chỉ nhận từ ECS).
+> **Note:** Security Groups kiểm soát chặt chẽ inbound/outbound cho ECS, RDS và EFS.
 
 ---
 
@@ -34,9 +34,13 @@
 ![EFS Config Screenshot](./images/w5/mh3/efs-config.png)
 > **Note:** Amazon EFS được cấu hình Mount Target tại các Private Subnets.
 
-### 2. Bằng chứng Read/Write Data trên Container
+### 2. ECS Task Definition với EFS Volume
+![ECS Task Def Screenshot](./images/w5/mh3/efs-task-def.png)
+> **Note:** Cấu hình Task Definition sử dụng EFS Access Point để phân quyền ghi cho Container.
+
+### 3. Bằng chứng Read/Write Data trên Container
 ![EFS Mount Screenshot](./images/w5/mh3/efs-mount.png)
-> **Note:** Lệnh `cat` trong container chứng minh file CSV được xuất ra thành công và lưu trữ bền vững trên EFS.
+> **Note:** Lệnh `cat` trong container chứng minh file CSV được xuất ra thành công và lưu trữ trên EFS.
 
 ---
 
@@ -45,15 +49,19 @@
 
 ### 1. AWS Backup Plan
 ![Backup Plan Screenshot](./images/w5/mh3/aws-backup.png)
-> **Note:** Plan `xbrain-daily-backup` bảo vệ toàn bộ tài nguyên quan trọng.
+> **Note:** Plan `xbrain-daily-backup` lập lịch backup tự động hằng ngày.
 
-### 2. Restore Job Completed
+### 2. Recovery Points (Điểm khôi phục)
+![Recovery Point Screenshot](./images/w5/mh3/recovery-point.png)
+> **Note:** Danh sách các bản backup đã hoàn thành (`Completed`) sẵn sàng để khôi phục.
+
+### 3. Restore Job Completed
 ![Restore Jobs Screenshot](./images/w5/mh3/restore-job.png)
-> **Note:** Trạng thái `Completed` chứng minh khả năng phục hồi thảm họa.
+> **Note:** Trạng thái `Completed` của Restore Job chứng minh khả năng phục hồi thảm họa thành công.
 
-### 3. Đọc dữ liệu sau khi Restore (EFS/RDS)
+### 4. Kiểm tra dữ liệu sau khi Restore
 ![Restore Validation Screenshot](./images/w5/mh3/after-restore.png)
-> **Note:** Dữ liệu sau khi restore vẫn nguyên vẹn và có thể truy cập được.
+> **Note:** Dữ liệu sau khi restore được kiểm tra và xác nhận nguyên vẹn.
 
 ---
 
@@ -85,5 +93,5 @@
 ## (6) Bonus (Optional: IaC & Automation)
 
 * **Terraform CI/CD Implementation:**
-Toàn bộ hạ tầng được quản lý qua code.
+Toàn bộ hạ tầng được quản lý qua code Terraform.
 * **Git Commit Link:** [G9-X/Merxly-XB9 Terraform W5 Hardening](https://github.com/G9-X/Merxly-XB9/commits/main)
