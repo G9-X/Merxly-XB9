@@ -1,15 +1,15 @@
 # Evidence Pack — Week 5 (Hardening Architecture)
 ## (1) Cover
 * **Group Name:** G9-X (Merxly)
-* **Members:** 
-1.Trần Văn Đức 		XB-DN26-119	
-2.Nguyễn Hữu Định 	XB-DN26-083	
-3.Trần Đình Bảo Long 	XB-DN26-050	
-4.Nguyễn Đức Chinh 	XB-DN26-080	
-5.Lê Duy Khánh 		XB-DN26-153	
-6.Trương Thị Mỹ Quyên 	XB-DN26-116	
-7.Trọng Tấn 		XB-DN26-152 	
-8.Lê Trung kiên		XB-DN26-045
+* **Members:**
+  - Trần Văn Đức (XB-DN26-119)
+  - Nguyễn Hữu Định (XB-DN26-083)
+  - Trần Đình Bảo Long (XB-DN26-050)
+  - Nguyễn Đức Chinh (XB-DN26-080)
+  - Lê Duy Khánh (XB-DN26-153)
+  - Trương Thị Mỹ Quyên (XB-DN26-116)
+  - Trọng Tấn (XB-DN26-152)
+  - Lê Trung Kiên (XB-DN26-045)
 * **Architecture:** Justified Single-VPC with ECS Fargate/EC2, RDS Multi-AZ, EFS, and Serverless Stack.
 
 ---
