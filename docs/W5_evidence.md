@@ -123,9 +123,20 @@ Domain-based egress allowlist configured for:
 - `api.cloudinary.com` (media uploads)
 - `*.docker.io` (container registry fallback)
 
-### Negative Security Test
+### Negative Security Test — Blocked Request in Alert Logs
 
-Traffic to unauthorized domains is blocked and visible in Alert Logs. VPC Flow Logs show `REJECT` entries for connections not matching the allowlist (see MH1 Flow Log sample entries showing REJECT status).
+![Firewall Alert Log](./images/w5/mh2/FlowLog.jpg)
+> **Network Firewall Alert Log** showing a blocked request:
+> - Firewall: `Xbrain-firewall`
+> - Source IP: `10.50.11.245` (private app subnet)
+> - Destination: `facebook.com` (port 443, TLS 1.2)
+> - Event type: `alert`
+> - Alert signature: `aws:alert_strict action`
+> - Alert action: **`blocked`**
+> - Verdict action: **`drop`**
+> - Timestamp: `2026-05-14T18:59:37`
+>
+> This proves the Network Firewall is actively blocking traffic to domains not in the egress allowlist. Traffic from the app subnet to `facebook.com` was intercepted and dropped.
 
 ---
 
@@ -281,6 +292,7 @@ The XBrain/Merxly e-commerce platform remains deployed and functional on the wor
 
 | Test | Expected | Actual | Evidence |
 |------|----------|--------|----------|
+| Network Firewall — blocked domain (facebook.com) | Blocked + Drop | `action: blocked`, `verdict: drop` | MH2 Alert Log screenshot |
 | API Gateway without auth token | 401 Unauthorized | 401 Unauthorized | MH4 curl test #3 |
 | API Gateway with invalid token | 403 Forbidden | 403 Forbidden | MH4 curl test #2 |
 | VPC Flow Log — external IP to RDS | REJECT | REJECT | MH1 Flow Log entries |
@@ -290,14 +302,30 @@ The XBrain/Merxly e-commerce platform remains deployed and functional on the wor
 
 ---
 
-## (9) Bonus (Optional)
+## (9) Bonus — Infrastructure as Code (Terraform)
 
-### Infrastructure as Code
+### Terraform PR for API Gateway + Throttling + API Key Auth
+
+![Terraform PR #13](./images/w5/mh4/terraform-pr-apigateway.png)
+> **Pull Request #13:** `feat: W5 MH4 — API Gateway throttling + API Key auth` on [G9-X/Terraform-G9](https://github.com/G9-X/Terraform-G9/pull/13)
+>
+> Terraform modules implemented:
+> - `aws_api_gateway_rest_api` — REST API definition
+> - `aws_api_gateway_authorizer` — Lambda Authorizer integration
+> - `aws_api_gateway_usage_plan` — Throttling (rate + burst limits)
+> - `aws_api_gateway_api_key` — API Key management
+> - `aws_api_gateway_stage` — Stage deployment
+>
+> All W5 MH4 infrastructure is managed as code, enabling reproducible deployments.
+
+### Additional IaC Coverage
 
 - Full Terraform configuration managing VPC, subnets, route tables, security groups, ECS cluster, RDS, and EFS
 - GitHub Actions CI/CD pipeline with automated deployment to AWS ECS
 - API Gateway key integrated into CI/CD workflow (commit `7c88feb`)
+- Terraform repo: [G9-X/Terraform-G9](https://github.com/G9-X/Terraform-G9)
 
 ### Git Commit History
 
 - [Evidence Pack and W5 hardening](https://github.com/G9-X/Merxly-XB9/commits/main)
+- [Terraform PR #13 — API Gateway IaC](https://github.com/G9-X/Terraform-G9/pull/13)
