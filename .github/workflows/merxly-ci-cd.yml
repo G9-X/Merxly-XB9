@@ -194,6 +194,8 @@ jobs:
           VITE_API_GATEWAY_URL: ${{ vars.VITE_API_GATEWAY_URL}}
           VITE_GOOGLE_CLIENT_ID: ${{ vars.VITE_GOOGLE_CLIENT_ID }}
           VITE_STRIPE_PUBLISHABLE_KEY: ${{ vars.VITE_STRIPE_PUBLISHABLE_KEY }}
+          VITE_API_GATEWAY_KEY: ${{ secrets.API_GATEWAY_KEY }}
+          API_GATEWAY_KEY: ${{ secrets.API_GATEWAY_KEY }}
         run: |
           npm ci
           npm run build
