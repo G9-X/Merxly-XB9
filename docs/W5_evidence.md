@@ -138,6 +138,18 @@ Domain-based egress allowlist configured for:
 >
 > This proves the Network Firewall is actively blocking traffic to domains not in the egress allowlist. Traffic from the app subnet to `facebook.com` was intercepted and dropped.
 
+### Network Firewall Flow Logs — CloudWatch Logs Insights
+
+![Firewall Flow Logs](./images/w5/mh2/AlertLog.jpg)
+> **CloudWatch Logs Insights** querying `/aws/network-firewall/flow/Xbrain-firewall_2026-05-14-19`:
+> - Resource: `arn:aws:network-firewall:us-west-2:246859065778:firewall/Xbrain-firewall`
+> - Multiple flow entries from `10.50.11.245` → `57.144.216.1:443` (facebook.com)
+> - All connections state: **`closed`** with reason: **`timeout`** and `alerted: true`
+> - Data source: `aws_network_firewall` (flow type)
+> - Timestamps: `2026-05-15T02:01:10` through `2026-05-15T02:02:31`
+>
+> Confirms the firewall intercepted and terminated all outbound TLS connections to the blocked domain over a sustained period.
+
 ---
 
 ## (4) MH3 — File Storage Layer + Backup Plan
