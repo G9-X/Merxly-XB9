@@ -243,6 +243,31 @@ export const useCreateProduct = (
     }
   }, [productData, isEditMode]);
 
+  // Build only the variants DTO (no side effects)
+  const buildVariantsDto = (): CreateProductVariantDto[] => {
+    return variants
+      .filter((variant) => !markedForDeletionIds.includes(variant.id))
+      .map((variant) => {
+        const attributeSelections = Object.entries(variant.attributeValues).map(
+          ([attrId, valueId]) => {
+            const attr = attributes.find((a) => a.id === attrId);
+            const value = attr?.values.find((v) => v.id === valueId);
+            return {
+              attributeName: attr?.name || '',
+              value: value?.value || '',
+            };
+          },
+        );
+        return {
+          sku: variant.sku || null,
+          price: variant.price,
+          stockQuantity: variant.available,
+          attributeSelections,
+          media: variant.media || [],
+        };
+      });
+  };
+
   // Build DTO for submission
   const buildCreateProductDto = (): CreateProductDto | null => {
     // Reset errors
@@ -310,32 +335,6 @@ export const useCreateProduct = (
           })),
       }));
 
-    // Build variants DTO (exclude variants marked for deletion)
-    const variantsDto: CreateProductVariantDto[] = variants
-      .filter((variant) => !markedForDeletionIds.includes(variant.id))
-      .map((variant) => {
-        // Build attribute selections
-        const attributeSelections = Object.entries(variant.attributeValues).map(
-          ([attrId, valueId]) => {
-            const attr = attributes.find((a) => a.id === attrId);
-            const value = attr?.values.find((v) => v.id === valueId);
-
-            return {
-              attributeName: attr?.name || '',
-              value: value?.value || '',
-            };
-          },
-        );
-
-        return {
-          sku: variant.sku || null,
-          price: variant.price,
-          stockQuantity: variant.available,
-          attributeSelections,
-          media: variant.media || [],
-        };
-      });
-
     return {
       name: productName.trim(),
       description: description.trim() || null,
@@ -343,7 +342,7 @@ export const useCreateProduct = (
       isActive,
       categoryId: categoryId!,
       productAttributes: productAttributesDto,
-      variants: variantsDto,
+      variants: buildVariantsDto(),
     };
   };
 
@@ -850,7 +849,7 @@ export const useCreateProduct = (
         if (hasDeletedAttributeValues()) {
           const deleteDto: DeleteAttributeValuesWithVariantsDto = {
             attributeValueIds: deletedAttributeValueIds,
-            productVariants: buildCreateProductDto()?.variants || [],
+            productVariants: buildVariantsDto(),
           };
           await deleteAttributeValuesMutation.mutateAsync(deleteDto);
         }
@@ -946,7 +945,7 @@ export const useCreateProduct = (
                     }),
                   },
                 ],
-                productVariants: buildCreateProductDto()?.variants || [],
+                productVariants: buildVariantsDto(),
               };
               await addAttributeValuesMutation.mutateAsync(addDto);
             }
@@ -957,7 +956,7 @@ export const useCreateProduct = (
         if (hasDeletedAttributes()) {
           const deleteDto: DeleteAttributesWithVariantsDto = {
             attributeIds: deletedAttributeIds,
-            productVariants: buildCreateProductDto()?.variants || [],
+            productVariants: buildVariantsDto(),
           };
           await deleteAttributesMutation.mutateAsync(deleteDto);
         }
@@ -1046,7 +1045,7 @@ export const useCreateProduct = (
                     })),
                 };
               }),
-              productAttributeValues: buildCreateProductDto()?.variants || [],
+              productAttributeValues: buildVariantsDto(),
             };
             await addAttributesMutation.mutateAsync(addDto);
           }
@@ -1093,9 +1092,13 @@ export const useCreateProduct = (
 
           // Reset dirty state by syncing snapshots with current state
           // This disables Save/Discard buttons after successful save
+          const trimmedName = productName.trim();
+          const trimmedDescription = description.trim();
+          setProductName(trimmedName);
+          setDescription(trimmedDescription);
           setInitialBasicInfo({
-            name: productName,
-            description: description,
+            name: trimmedName,
+            description: trimmedDescription,
             categoryId: categoryId,
             isActive: isActive,
             isStoreFeatured: isStoreFeatured,

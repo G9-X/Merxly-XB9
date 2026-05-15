@@ -86,15 +86,22 @@ export const CartPage = () => {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked && cart?.cartItems) {
-      setSelectedItems(new Set(cart.cartItems.map((item) => item.id)));
+      setSelectedItems(
+        new Set(
+          cart.cartItems
+            .filter((item) => item.isAvailable)
+            .map((item) => item.id),
+        ),
+      );
     } else {
       setSelectedItems(new Set());
     }
   };
 
+  const availableItems = cart?.cartItems.filter((item) => item.isAvailable) || [];
   const isAllSelected =
-    cart && cart.cartItems.length > 0
-      ? cart.cartItems.every((item) => selectedItems.has(item.id))
+    availableItems.length > 0
+      ? availableItems.every((item) => selectedItems.has(item.id))
       : false;
 
   const handleUpdateQuantity = async (itemId: string, quantity: number) => {

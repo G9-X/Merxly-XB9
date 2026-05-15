@@ -2,9 +2,14 @@
 ## (1) Cover
 * **Group Name:** G9-X (Merxly)
 * **Members:** 
-  - Lê Hoàng Trung Kiên
-  - [Thành viên 2]
-  - [Thành viên 3]
+1.Trần Văn Đức 		XB-DN26-119	
+2.Nguyễn Hữu Định 	XB-DN26-083	
+3.Trần Đình Bảo Long 	XB-DN26-050	
+4.Nguyễn Đức Chinh 	XB-DN26-080	
+5.Lê Duy Khánh 		XB-DN26-153	
+6.Trương Thị Mỹ Quyên 	XB-DN26-116	
+7.Trọng Tấn 		XB-DN26-152 	
+8.Lê Trung kiên		XB-DN26-045
 * **Architecture:** Justified Single-VPC with ECS Fargate/EC2, RDS Multi-AZ, EFS, and Serverless Stack.
 
 ---
@@ -62,13 +67,26 @@
 
 ## (5) MH4 & MH5: Serverless Security & Scaling
 
-### 1. API Gateway REST API với API Key (MH4)
-![API Gateway Key Screenshot](./images/w5/mh4/api-gateway-key.png)
-> **Note:** API Gateway yêu cầu API Key hợp lệ để truy cập.
+### 1. API Gateway REST API với Lambda Authorizer (MH4)
+![API Gateway Screenshot](./images/w5/mh4/Api_Gateway.png)
+> **Note:** API Gateway được cấu hình với REST API gồm GET method, tích hợp với Lambda, và sử dụng Lambda Authorizer (MyLambdaAuthorizer) để kiểm soát truy cập. Deployment thành công và active cho dev environment.
 
-### 2. Lambda Reserved Concurrency & Throttling (MH5)
-![Lambda Concurrency Screenshot](./images/w5/mh5/lambda-concurrency.png)
-> **Note:** Hệ thống tự động Throttling khi vượt ngưỡng giới hạn để bảo vệ tài nguyên.
+### 2. Lambda Authorizer Configuration (MH4)
+![Authorizers Screenshot](./images/w5/mh4/Authorizers.png)
+> **Note:** Authorizer ID: 54hj0t, Lambda function: SimpleAPIAuthorizer (us-west-2). Token được trích xuất từ Authorization header với caching 300 giây để tối ưu performance.
+
+### 3. Lambda Function - Authorization Logic (MH4)
+![Lambda Code Screenshot](./images/w5/mh4/Lambda.png)
+> **Note:** Hàm SimpleAPIAuthorizer xác thực token "Bearer my-secret-token-123". Nếu hợp lệ, trả về Allow policy cho user; nếu không, trả về Deny policy. Mã code được viết bằng JavaScript với logic kiểm tra token rõ ràng.
+
+### 4. Test Results - Authorization Validation (MH5)
+![Test Command Screenshot](./images/w5/mh4/test_cmd.jpg)
+> **Note:** Các test command chứng minh:
+> - **Test 1 (Valid Token):** curl với "Bearer my-secret-token-123" → HTTP/1.1 200 OK ✓
+> - **Test 2 (Invalid Token):** curl với "Bearer fake-token" → HTTP/1.1 403 Forbidden ✓
+> - **Test 3 (No Token):** curl không header → HTTP/1.1 401 Unauthorized ✓
+> 
+> Lambda Authorizer hoạt động chính xác: chỉ cho phép request với token hợp lệ, từ chối request với token không hợp lệ hoặc không có token.
 
 ---
 
