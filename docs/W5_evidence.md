@@ -72,7 +72,9 @@
 > **Note:** Hàm SimpleAPIAuthorizer xác thực token "Bearer my-secret-token-123". Nếu hợp lệ, trả về Allow policy cho user; nếu không, trả về Deny policy. Mã code được viết bằng JavaScript với logic kiểm tra token rõ ràng.
 
 ### 4. Test Results - Authorization Validation (MH5)
-![Test Command Screenshot](./images/w5/mh4/test_cmd.jpg)
+![Test Command Screenshot](docs/images/w5/mh5/Throttling-Evidence.png)
+
+
 > **Note:** Các test command chứng minh:
 > - **Test 1 (Valid Token):** curl với "Bearer my-secret-token-123" → HTTP/1.1 200 OK ✓
 > - **Test 2 (Invalid Token):** curl với "Bearer fake-token" → HTTP/1.1 403 Forbidden ✓
