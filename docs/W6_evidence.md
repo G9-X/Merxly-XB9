@@ -187,7 +187,7 @@
 
 <!-- 📸 SCREENSHOT: CloudWatch Console > Dashboards > xbrain-dashboard — showing all 3 widgets -->
 
-![CloudWatch Dashboard](./images/w6/observability/dashboard-overview.png)
+![CloudWatch Dashboard](./images/w6/observability/Dashboard-Image.png)
 
 > **Note:** Dashboard `xbrain-dashboard` gồm 3 widget:
 >
