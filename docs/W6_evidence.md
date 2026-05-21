@@ -187,13 +187,15 @@
 
 <!-- 📸 SCREENSHOT: CloudWatch Console > Dashboards > xbrain-dashboard — showing all 3 widgets -->
 
-![CloudWatch Dashboard](./images/w6/observability/Dashboard-Image.png)
+![CloudWatch Dashboard](./images/w6/observability/Dashboard.png)
 
-> **Note:** Dashboard `xbrain-dashboard` gồm 3 widget:
+> **Note:** Dashboard `Metric` gồm 5 widget:
 >
-> - **Widget 1 (API tier):** ALB `RequestCount` + `HTTPCode_Target_5XX_Count`
-> - **Widget 2 (Data tier):** RDS `DatabaseConnections` + `FreeStorageSpace`
-> - **Widget 3 (System):** EC2 `CPUUtilization` + `mem_used_percent` (CWAgent)
+> - **Widget 1 (Custom Metric):** `AgentResponseLatencyMs` — latency Bedrock Agent, publish qua `PutMetricData` (namespace `GeekBrain/AI_Operations`)
+> - **Widget 2 (Data tier):** RDS `DatabaseConnections` + `CPUUtilization`
+> - **Widget 3 (API tier):** API Gateway `Count` + `4XXError` + `5XXError`
+> - **Widget 4 (CWAgent):** `mem_used_percent` — RAM usage trên ECS EC2 host (namespace `CWAgent`)
+> - **Widget 5 (Compute tier):** Lambda `Errors` + `Invocations`
 
 ### 4.2. CloudWatch Alarm — ALB 5XX
 
