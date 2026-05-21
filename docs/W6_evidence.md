@@ -115,7 +115,7 @@
 
 <!-- 📸 SCREENSHOT: AWS Lambda Console > Function cost-guard-lambda > Tab Code — showing function overview -->
 
-![Cost Guard Lambda](./images/w6/cost_guard/lambda-function.png)
+![Cost Guard Lambda](./images/w6/cost_guard/CouldTrail_Log_Lambda-Stop-Ec2%20(not%20by%20user).png)
 
 > **Note:** Lambda function `cost-guard-lambda` chạy Python 3.12, quét EC2 và RDS instances. Instances thiếu tag `keep=true` hoặc `Environment=dev` sẽ bị tự động dừng (stop).
 
@@ -123,7 +123,7 @@
 
 <!-- 📸 SCREENSHOT: IAM Console > Role cost-guard-lambda-role > Permissions tab — showing inline policy -->
 
-![Cost Guard IAM Policy](./images/w6/cost_guard/iam-policy.png)
+![Cost Guard IAM Policy](./images/w6/cost_guard/SNS_Allow_Budget_Send_Message.png)
 
 > **Note:** IAM Role chỉ cấp đúng 5 quyền cần thiết:
 >
@@ -135,7 +135,7 @@
 
 <!-- 📸 SCREENSHOT: EventBridge Console > Rules > cost-guard-schedule — showing cron expression -->
 
-![EventBridge Schedule](./images/w6/cost_guard/eventbridge-schedule.png)
+![EventBridge Schedule](./images/w6/cost_guard/EventBridge.png)
 
 > **Note:** EventBridge rule `cost-guard-schedule` chạy theo lịch `rate(1 day)` để tự động quét và dừng tài nguyên lãng phí mỗi ngày.
 
@@ -147,7 +147,7 @@
 
 <!-- 📸 SCREENSHOT: AWS Budgets Console > Budget detail — showing $150 daily budget with SNS alert -->
 
-![AWS Budget](./images/w6/cost_guard/budget-config.png)
+![AWS Budget](./images/w6/cost_guard/Billing%20and%20cost%20management.png)
 
 > **Note:** Daily budget $150 USD được cấu hình. Khi chi phí thực tế vượt 80% ngưỡng, alert tự động gửi tới SNS topic → trigger Cost Guard Lambda.
 
@@ -155,7 +155,7 @@
 
 <!-- 📸 SCREENSHOT: SNS Console > Topic cost-guard-budget-topic > Subscriptions tab -->
 
-![SNS Subscription](./images/w6/cost_guard/sns-subscription.png)
+![SNS Subscription](./images/w6/cost_guard/SNS.png)
 
 > **Note:** SNS topic `cost-guard-budget-topic` có Lambda subscription. Khi Budgets phát hiện chi phí vượt ngưỡng → SNS publish message → Lambda tự động quét và dừng tài nguyên thừa.
 
@@ -167,9 +167,17 @@
 
 <!-- 📸 SCREENSHOT: CloudWatch Logs > Log group /aws/lambda/cost-guard-lambda — showing scan results -->
 
-![Cost Guard Logs](./images/w6/cost_guard/cloudwatch-logs.png)
+![Cost Guard Logs](./images/w6/cost_guard/CouldTrail_Log_Lambda-Stop-Ec2%20(not%20by%20user).png)
 
 > **Note:** Kết quả chạy thử Cost Guard Lambda. Log hiển thị danh sách EC2/RDS instances đã được quét và hành động stop (nếu có) trên các instance không có tag `keep=true`.
+
+#### 5.2. Cost Guard Action Result
+
+<!-- 📸 SCREENSHOT: EC2 Console > Instances — showing stopped EC2 instance from Cost Guard -->
+
+![EC2 Stopped by Cost Guard](./images/w6/cost_guard/EC2_Stopped.png)
+
+> **Note:** Ảnh minh họa EC2 instance đã bị Cost Guard dừng khi không có tag `keep=true`. Đây là bằng chứng thực tế cho hành động tự động hóa quản lý chi phí.
 
 ---
 
