@@ -182,6 +182,8 @@ namespace merxly.Infrastructure
             services.Configure<StripeSettings>(configuration.GetSection("StripeSettings"));
             StripeConfiguration.ApiKey = configuration.GetSection("StripeSettings:SecretKey").Get<string>();
 
+            // Ai Chat Service
+            services.AddHttpClient<IAiChatService, AiChatService>();
 
             return services;
         }
