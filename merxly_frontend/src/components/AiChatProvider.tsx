@@ -1,10 +1,7 @@
 import { AssistantRuntimeProvider, useLocalRuntime } from '@assistant-ui/react';
 import { type ReactNode } from 'react';
+import apiClient from '../services/apiClient'; 
 
-const API_GATEWAY_URL = import.meta.env.VITE_API_GATEWAY_URL;
-const API_GATEWAY_KEY = import.meta.env.VITE_API_GATEWAY_KEY;
-
-// Generate or retrieve session ID for Bedrock Agent memory
 const getSessionId = () => {
   let sessionId = sessionStorage.getItem('geekbrain_session_id');
   if (!sessionId) {
@@ -17,7 +14,6 @@ const getSessionId = () => {
 export function AiChatProvider({ children }: { children: ReactNode }) {
   const runtime = useLocalRuntime({
     async run({ messages }) {
-      // Get the last user message
       const lastMessage = messages[messages.length - 1];
       const textContent = lastMessage?.content.find((c) => c.type === 'text');
       const question = textContent?.type === 'text' ? textContent.text : '';
@@ -28,30 +24,24 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
 
       const sessionId = getSessionId();
 
-      const response = await fetch(API_GATEWAY_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': API_GATEWAY_KEY,
-        },
-        body: JSON.stringify({
+      try {
+        // Change from direct fetch to backend endpoint
+        const response = await apiClient.post('/AiChat/ask', {
           question: question,
           session_id: sessionId,
-        }),
-      });
+        });
 
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
+        const reply = response.data?.data?.answer ?? response.data?.answer ?? 'Kh�ng c� ph?n h?i t? AI.';
+
+        return {
+          content: [{ type: 'text', text: reply }],
+        };
+      } catch (error) {
+        console.error('Error calling AI endpoint:', error);
+        return {
+          content: [{ type: 'text', text: 'X?y ra l?i khi giao ti?p v?i AI.' }],
+        };
       }
-
-      const data = await response.json();
-
-      // Bedrock Agent response format has an 'answer' field
-      const reply = data.answer ?? 'Không có phản hồi từ AI.';
-
-      return {
-        content: [{ type: 'text', text: reply }],
-      };
     },
   });
 
