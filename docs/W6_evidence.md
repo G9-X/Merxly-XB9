@@ -199,35 +199,36 @@
 
 ### 4.2. CloudWatch Alarm
 
-Case 1: EC2 high cpu alarm
-Mô tả: EC2 High CPU alarm được sử dụng để phát hiện sớm tình trạng server backend bị quá tải khi lưu lượng truy cập tăng đột biến hoặc ứng dụng xử lý request vượt quá tài nguyên cho phép, từ đó giảm nguy cơ chậm phản hồi và gián đoạn dịch vụ.
+Case 1: EC2 high cpu alarm<br>
+Mô tả: EC2 High CPU alarm được sử dụng để phát hiện sớm tình trạng server backend bị quá tải khi lưu lượng truy cập tăng đột biến hoặc ứng dụng xử lý request vượt quá tài nguyên cho phép, từ đó giảm nguy cơ chậm phản hồi và gián đoạn dịch vụ.<br>
 
-![CloudWatch Alarm](./images/w6/observability/1.1.png)
-![CloudWatch Alarm](./images/w6/observability/1.2.png)
-![CloudWatch Alarm](./images/w6/observability/1.3.png)
-Check case 1:
-Làm tăng CPU:
-$ for i in {1..16}; do yes > /dev/null & done
-$ top
-$ q
-$ killall yes
+![CloudWatch Alarm](./images/w6/observability/1.1.png)<br>
+![CloudWatch Alarm](./images/w6/observability/1.2.png)<br>
+![CloudWatch Alarm](./images/w6/observability/1.3.png)<br>
+Check case 1:<br>
+Làm tăng CPU:<br>
+$ for i in {1..16}; do yes > /dev/null & done<br>
+$ top<br>
+$ q<br>
+$ killall yes<br>
 
-![CloudWatch Alarm](./images/w6/observability/1.4.png)
-Results: 
-Action thông báo email.
-![CloudWatch Alarm](./images/w6/observability/1.5.png)
+![CloudWatch Alarm](./images/w6/observability/1.4.png)<br>
+Results: <br>
+Action thông báo email.<br>
+![CloudWatch Alarm](./images/w6/observability/1.5.png)<br>
 Check history trạng thái:
-![CloudWatch Alarm](./images/w6/observability/1.6.png)
-
+![CloudWatch Alarm](./images/w6/observability/1.6.png)<br>
+![CloudWatch Alarm](./images/w6/observability/1.7.png)<br>
+<br>
 ### 4.3. Log Insights Query
 
-Pattern 1:  Query này dùng để xác định các địa chỉ IP bị VPC Flow Logs từ chối nhiều nhất bằng cách đếm số lần REJECT theo từng IP nguồn.
-# Top rejected IPs from VPC Flow Logs (check 12h)
-filter action="REJECT"
-| stats count(*) by srcAddr
-| sort count desc | limit 10
+Pattern 1:  Query này dùng để xác định các địa chỉ IP bị VPC Flow Logs từ chối nhiều nhất bằng cách đếm số lần REJECT theo từng IP nguồn.<br>
+Top rejected IPs from VPC Flow Logs (check 12h)<br>
+filter action="REJECT"<br>
+| stats count(*) by srcAddr<br>
+| sort count desc | limit 10<br>
 
-![Log Insights](./images/w6/observability/qr1.png)
+![Log Insights](./images/w6/observability/qr1.png)<br>
 
 
 
