@@ -199,19 +199,13 @@
 
 ### 4.2. CloudWatch Alarm
 
-Case 1: EC2 high cpu alarm<br>
-Mô tả: EC2 High CPU alarm được sử dụng để phát hiện sớm tình trạng server backend bị quá tải khi lưu lượng truy cập tăng đột biến hoặc ứng dụng xử lý request vượt quá tài nguyên cho phép, từ đó giảm nguy cơ chậm phản hồi và gián đoạn dịch vụ.<br>
+**Case 1: EC2 high cpu alarm**<br>
+**Mô tả:** EC2 High CPU alarm được sử dụng để phát hiện sớm tình trạng server backend bị quá tải khi lưu lượng truy cập tăng đột biến hoặc ứng dụng xử lý request vượt quá tài nguyên cho phép, từ đó giảm nguy cơ chậm phản hồi và gián đoạn dịch vụ.<br>
 
 ![CloudWatch Alarm](./images/w6/observability/1.1.png)<br>
 ![CloudWatch Alarm](./images/w6/observability/1.2.png)<br>
 ![CloudWatch Alarm](./images/w6/observability/1.3.png)<br>
-Check case 1:<br>
-Làm tăng CPU:<br>
-$ for i in {1..16}; do yes > /dev/null & done<br>
-$ top<br>
-$ q<br>
-$ killall yes<br>
-
+Check case 1:Làm tăng CPU:<br>
 ![CloudWatch Alarm](./images/w6/observability/1.4.png)<br>
 Results: <br>
 Action thông báo email.<br>
@@ -220,6 +214,18 @@ Check history trạng thái:<br>
 ![CloudWatch Alarm](./images/w6/observability/1.6.png)<br>
 ![CloudWatch Alarm](./images/w6/observability/1.7.png)<br>
 <br>
+**Case 2: ALB Backend Error Monitoring** <br>
+**Mô tả:** Phát hiện số lượng lỗi HTTP 5XX tăng cao từ backend phía sau Application Load Balancer. <br>
+![CloudWatch Alarm](./images/w6/observability/case2.1.png)<br>
+![CloudWatch Alarm](./images/w6/observability/case2.2.png)<br>
+![CloudWatch Alarm](./images/w6/observability/case2.3.png)<br>
+**Case 3: ALB-UnHealthyHostCount** <br>
+**mô tả:** Phát hiện target/backend phía sau ALB chuyển sang trạng thái unhealthy hoặc không còn đáp ứng health check. <br>
+![CloudWatch Alarm](./images/w6/observability/case3.1.png)<br>
+**Case 4: ECS-RunningTaskCount-Low**
+**mô tả:** Phát hiện ECS service chạy thiếu số lượng task yêu cầu, có nguy cơ ảnh hưởng khả dụng dịch vụ.
+![CloudWatch Alarm](./images/w6/observability/case4.1.png)<br>
+
 ### 4.3. Log Insights Query
 
 Pattern 1:  Query này dùng để xác định các địa chỉ IP bị VPC Flow Logs từ chối nhiều nhất bằng cách đếm số lần REJECT theo từng IP nguồn.<br>
