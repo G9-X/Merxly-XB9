@@ -35,13 +35,13 @@
 
 > **Capitalization Convention:** PascalCase for all tag keys. Enforced via Terraform `default_tags` in `provider.tf` — every resource created by Terraform automatically inherits these 4 tags without manual intervention.
 
-#### 1.2. Tags Applied via Terraform `default_tags`
+#### 1.2. Global Tags Overview via Tag Editor
 
-<!-- 📸 SCREENSHOT: Chụp file provider.tf hoặc AWS Console > Resource Groups > Tag Editor showing tags on resources -->
+<!-- 📸 SCREENSHOT: Chụp AWS Console > Resource Groups > Tag Editor showing tags on all resources -->
 
-![Default Tags in provider.tf](./images/w6/cost_visibility/default-tags-provider.png)
+![All Resources Tags](./images/w6/cost_visibility/all-resources-tags.png)
 
-> **Note:** `default_tags` block trong `provider.tf` tự động gắn 4 tag chuẩn lên mọi resource được tạo bởi Terraform, đảm bảo tính nhất quán 100%.
+> **Note:** Hình ảnh từ AWS Resource Groups Tag Editor xác nhận có 51 resources trên toàn hệ thống (bao gồm KMS, Lambda, RDS, S3, SecretsManager...) đều được gắn đầy đủ 4 tag chuẩn. Việc này được tự động hóa nhờ cơ chế `default_tags` trong Terraform `provider.tf`.
 
 #### 1.3. Tags on ECS (Cluster + Service + Task Definition)
 
@@ -67,16 +67,9 @@
 
 > **Note:** Cả 2 Lambda function (Cost Guard và Security Guard) đều được gắn tag thông qua Terraform module.
 
-#### 1.6. Tags on S3 / EFS / EC2
 
-<!-- 📸 SCREENSHOT: Tag Editor search results showing tagged resources across services -->
 
-![Tag Editor Results](./images/w6/cost_visibility/tag-editor-results.png)
-
-> **Note:** Sử dụng AWS Resource Groups Tag Editor để xác nhận tất cả billable resources đều có đầy đủ 4 tag chuẩn.
-
----
-
+<!--
 ### Task 2: Cost Allocation Tags & Cost Explorer
 
 #### 2.1. Cost Allocation Tags Activated
@@ -97,13 +90,8 @@
 
 #### 2.3. Top 3 Cost Drivers Identified
 
-| Rank | Service                | Est. Monthly Cost | % of Total |
-| ---- | ---------------------- | ----------------- | ---------- |
-| 1    | Amazon EC2 (ECS)       | ~$30              | ~45%       |
-| 2    | Amazon RDS             | ~$25              | ~38%       |
-| 3    | Elastic Load Balancing | ~$8               | ~12%       |
-
-> **Note:** EC2 instances cho ECS cluster là cost driver lớn nhất do chạy 24/7. RDS MySQL Single-AZ đứng thứ hai. ALB đứng thứ ba với chi phí cố định cho load balancer hour + LCU charges.
+---
+-->
 
 ---
 
@@ -290,6 +278,15 @@
 
 > **Note:** CloudTrail ghi nhận event `RevokeSecurityGroupIngress` được thực hiện bởi IAM Role của Lambda function. Đây là bằng chứng audit trail cho hành động tự phục hồi bảo mật.
 
+#### 7.5. Security Threat & Blast Radius Analysis
+
+- **Misconfiguration Fixed:** Mở cổng quản trị (SSH - port 22 hoặc RDP - port 3389) cho toàn bộ Internet (`0.0.0.0/0`).
+- **Security Threat:** Kẻ tấn công có thể rà quét (scan) port và thực hiện tấn công Brute-force/Dictionary attack liên tục để dò mật khẩu, hoặc khai thác lỗ hổng phần mềm SSH chưa được vá.
+- **Blast Radius (Hậu quả nếu không remediate):** Nếu bị chiếm quyền điều khiển EC2, kẻ tấn công có thể:
+  1. Đánh cắp, phá hoại hoặc tống tiền (ransomware) dữ liệu trên server.
+  2. Sử dụng EC2 làm bàn đạp (pivot) lây lan sang các tài nguyên nhạy cảm khác trong Private Subnet (ví dụ: RDS Database).
+  3. Bị lợi dụng tài nguyên để đào coin, gây hóa đơn AWS khổng lồ (Cost Impact).
+
 ---
 
 ### Task 8: Preventive Control — KMS Customer Managed Key
@@ -316,7 +313,11 @@
 
 #### 8.3. Security-Cost Trade-off Statement
 
-> **Trade-off:** KMS Customer Managed Key có chi phí cố định **$1/tháng/key** cho việc lưu trữ, cộng thêm ~$0.03/10,000 lần mã hóa/giải mã. Chi phí này được justify vì CMK cho phép kiểm soát truy cập chi tiết hơn AWS-managed key (`aws/rds`), hỗ trợ audit qua CloudTrail, và tự động xoay khóa hàng năm giúp đáp ứng yêu cầu compliance mà không cần thao tác thủ công.
+<!-- 📸 SCREENSHOT: CloudTrail Console > Event history > CreateGrant event showing rds.amazonaws.com accessing the CMK -->
+
+![CloudTrail KMS Audit](./images/w6/security/cloudtrail-kms.png)
+
+> **Trade-off:** CMK tốn $1/tháng. Justified bởi yêu cầu audit trail — mỗi decrypt event được log kèm IAM principal đã truy cập dữ liệu liên quan. Đồng thời, sự kiện `CreateGrant` trong CloudTrail chứng minh rõ RDS đang xin quyền mã hóa/giải mã thông qua CMK này.
 
 ---
 
@@ -377,7 +378,7 @@ Từ thiết kế hạ tầng Week 5, tụi em đã chủ động lựa chọn s
 #### Break-Even & Recommendation
 
 - **Break-Even Point:** Since this is a 1-year contract, the total annual commitment is **$131.40**. The break-even point against On-Demand occurs at **8.6 months** of continuous usage ($131.40 / $15.18).
-- **Justified Deferral Decision:** Vì tài khoản AWS workshop thực chất chỉ được cấp phát và hoạt động **3 ngày mỗi tuần** (bị xóa hoặc khóa vào các ngày còn lại), việc mua Savings Plan kỳ hạn 1 năm sẽ là một quyết định lãng phí tài chính khổng lồ. Chúng tôi sẽ phải trả tiền cho toàn bộ 365 ngày nhưng chỉ thực sự sử dụng hạ tầng chưa tới 150 ngày. Do đó, việc trì hoãn (defer) mua Savings Plan và tiếp tục sử dụng On-Demand kết hợp với Auto Scaling/Cost Guard Lambda là quyết định FinOps tối ưu nhất cho profile của dự án này.
+- **Justified Deferral Decision:** Vì tài khoản AWS workshop thực chất chỉ được cấp phát và hoạt động **3 ngày mỗi tuần** (bị xóa hoặc khóa vào các ngày còn lại), việc mua Savings Plan kỳ hạn 1 năm sẽ là một quyết định lãng phí tài chính khổng lồ. Sẽ phải trả tiền cho toàn bộ 365 ngày nhưng chỉ thực sự sử dụng hạ tầng chưa tới 150 ngày. Do đó, việc trì hoãn (defer) mua Savings Plan và tiếp tục sử dụng On-Demand kết hợp với Auto Scaling/Cost Guard Lambda là quyết định FinOps tối ưu nhất cho profile của dự án này.
 
 <!-- 📸 SCREENSHOT: (Optional) AWS Pricing Calculator showing t3.small pricing comparison -->
 
