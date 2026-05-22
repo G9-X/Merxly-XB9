@@ -371,12 +371,12 @@ Từ thiết kế hạ tầng Week 5, tụi em đã chủ động lựa chọn s
 
 #### 1-Year Compute Savings Plan (No Upfront)
 
-- **Savings Plan Commit:** **$7.52/month**.
-- **Monthly Savings:** $15.18 - $7.52 = **$7.66/month** (khoảng 50%).
+- **Savings Plan Commit:** **$10.95/month**.
+- **Monthly Savings:** $15.18 - $10.95 = **$4.23/month** (khoảng 28%).
 
 #### Break-Even & Recommendation
 
-- **Break-Even Point:** Since this is a 1-year contract, the total annual commitment is **$90.24** ($7.52 × 12). The break-even point against On-Demand occurs at **5.9 months** of continuous usage ($90.24 / $15.18).
+- **Break-Even Point:** Since this is a 1-year contract, the total annual commitment is **$131.40** ($10.95 × 12). The break-even point against On-Demand occurs at **8.6 months** of continuous usage ($131.40 / $15.18).
 - **Justified Deferral Decision:** Vì tài khoản AWS workshop thực chất chỉ được cấp phát và hoạt động **3 ngày mỗi tuần** (bị xóa hoặc khóa vào các ngày còn lại), việc mua Savings Plan kỳ hạn 1 năm sẽ là một quyết định lãng phí tài chính khổng lồ. Sẽ phải trả tiền cho toàn bộ 365 ngày nhưng chỉ thực sự sử dụng hạ tầng chưa tới 150 ngày. Do đó, việc trì hoãn (defer) mua Savings Plan và tiếp tục sử dụng On-Demand kết hợp với Auto Scaling/Cost Guard Lambda là quyết định FinOps tối ưu nhất cho profile của dự án này.
 
 <!-- 📸 SCREENSHOT: (Optional) AWS Pricing Calculator showing t3.small pricing comparison -->
