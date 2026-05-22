@@ -175,7 +175,7 @@
 
 <!-- 📸 SCREENSHOT: EC2 Console > Instances — showing stopped EC2 instance from Cost Guard -->
 
-![EC2 Stopped by Cost Guard](./images/w6/cost_guard/EC2_Stopped.png)
+![EC2 Stopped by Cost Guard](./images/w6/cost_guard/abc.png)
 
 > **Note:** Ảnh minh họa EC2 instance đã bị Cost Guard dừng khi không có tag `keep=true`. Đây là bằng chứng thực tế cho hành động tự động hóa quản lý chi phí.
 
