@@ -227,7 +227,7 @@ Check history trạng thái:<br>
 ACtion case 2,3,4: <br>
 ![CloudWatch Alarm](./images/w6/observability/case2.2.png)<br>
 
-##**BONUS**<br>
+## BONUS Composite CloudWatch Alarm
 **Composite CloudWatch Alarm: Service-Availability-Confirmed**<br>
 **Logic:** Composite alarm xác nhận sự cố availability chỉ khi backend ALB trả nhiều lỗi 5XX đồng thời với target unhealthy hoặc ECS service thiếu running task.<br>
 ALARM("ALB-Target-5XX-High") <br>
