@@ -397,23 +397,26 @@ During our Week 5 and Week 6 cloud architecture review, we identified significan
 
 ### Bonus 3: Terraform IaC for Self-Healing Resources (+0.25)
 
-Toàn bộ Cost Guard Lambda được triển khai 100% qua Terraform module `module/CostGuard`:
+Toàn bộ **Cost Guard Lambda** được triển khai 100% qua Terraform module `module/CostGuard`:
 
-- **Lambda function** + **IAM Role** least-privilege
+- **Lambda function** + **IAM Role** (least-privilege)
 - **EventBridge Schedule** (daily trigger)
 - **SNS Topic** + **Lambda Subscription**
 - **AWS Budgets** alert ($150/day → SNS → Lambda)
 
-#### Terraform Validate Output
+#### 1. Terraform Validate — Thành công
+![Terraform Validate Success](./images/w6/bonus/terraform-validate.png)
 
-<!-- 📸 SCREENSHOT: Terminal showing `terraform validate` → "Success! The configuration is valid." -->
+> **Note:** `terraform validate` chạy thành công sau khi merge PR #24 (fix cost-guard dev targeting).
 
-![Terraform Validate](./images/w6/bonus/terraform-validate.png)
+#### 2. Module CostGuard — main.tf
+![CostGuard main.tf](./images/w6/bonus/terraform-costguard-code.png)
 
-#### Terraform Module Code
+#### 3. Các file quan trọng khác trong module
 
-<!-- 📸 SCREENSHOT: Code editor showing module/CostGuard/main.tf -->
+**variables.tf**
+![CostGuard variables.tf](./images/w6/bonus/terraform-costguard-variables.png)
 
-![Terraform CostGuard Module](./images/w6/bonus/terraform-costguard-code.png)
-
+**outputs.tf**
+![CostGuard outputs.tf](./images/w6/bonus/terraform-costguard-outputs.png)
 - **Git Commit Link:** [G9-X/Terraform-G9 — W6 Cost & Security](https://github.com/G9-X/Terraform-G9/commits/main)
