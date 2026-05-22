@@ -217,7 +217,6 @@ Check history trạng thái:<br>
 **Case 2: ALB Backend Error Monitoring** <br>
 **Mô tả:** Phát hiện số lượng lỗi HTTP 5XX tăng cao từ backend phía sau Application Load Balancer. <br>
 ![CloudWatch Alarm](./images/w6/observability/case2.1.png)<br>
-![CloudWatch Alarm](./images/w6/observability/case2.2.png)<br>
 ![CloudWatch Alarm](./images/w6/observability/case2.3.png)<br>
 **Case 3: ALB-UnHealthyHostCount** <br>
 **mô tả:** Phát hiện target/backend phía sau ALB chuyển sang trạng thái unhealthy hoặc không còn đáp ứng health check. <br>
@@ -225,26 +224,28 @@ Check history trạng thái:<br>
 **Case 4: ECS-RunningTaskCount-Low**
 **mô tả:** Phát hiện ECS service chạy thiếu số lượng task yêu cầu, có nguy cơ ảnh hưởng khả dụng dịch vụ.
 ![CloudWatch Alarm](./images/w6/observability/case4.1.png)<br>
+ACtion case 2,3,4: <br>
+![CloudWatch Alarm](./images/w6/observability/case2.2.png)<br>
 
 ### 4.3. Log Insights Query
-**Queries**
+**Queries**<br>
 ![Log Insights](./images/w6/observability/2.1.png)<br>
 **Case 1: Inbound Port Scan**<br>
-1) Mục đích: Detect inbound scanning/reconnaissance vào các port nhạy cảm (SSH, Telnet, RDP, DB, admin port) trong VPC để kiểm tra exposure và validate Security Group/NACL. “Ai đang nhắm vào tôi”<br>
-2) Kết quả: Có nhiều IP public đang scan Telnet, RDP và admin port vào private IP trong VPC, nhưng đều bị AWS block (REJECT). <br>
-3) Có thể làm gì tiếp theo từ query này: Kiểm tra lại Security Group/public access và block các IP scan nhiều nếu cần.<br>
+Mục đích: Detect inbound scanning/reconnaissance vào các port nhạy cảm (SSH, Telnet, RDP, DB, admin port) trong VPC để kiểm tra exposure và validate Security Group/NACL. “Ai đang nhắm vào tôi”<br>
+Kết quả: Có nhiều IP public đang scan Telnet, RDP và admin port vào private IP trong VPC, nhưng đều bị AWS block (REJECT). <br>
+Đề xuất tiếp theo: Kiểm tra lại Security Group/public access và block các IP scan nhiều nếu cần.<br>
 ![Log Insights](./images/w6/observability/2c1_1.png)<br>
 ![Log Insights](./images/w6/observability/2c1_2.png)<br>
 **case 2: Top Outbound Traffic: Detect outbound traffic lớn/NAT cost** <br>
-1) Mục đích: Detect outbound traffic lớn từ private subnet ra internet để kiểm tra bất thường và tối ưu NAT Gateway cost. <br>
-2) Kết quả: Các private IP 10.50.x.x đang gửi nhiều HTTPS traffic (443) ra public IP bên ngoài. Chuẩn đoán là application/API traffic bình thường qua NAT Gateway.<br>
-3) Có thể làm gì tiếp theo từ query này: Kiểm tra workload nào tạo nhiều outbound traffic nhất để tối ưu NAT cost hoặc phát hiện traffic bất thường.<br>
+Mục đích: Detect outbound traffic lớn từ private subnet ra internet để kiểm tra bất thường và tối ưu NAT Gateway cost. <br>
+Kết quả: Các private IP 10.50.x.x đang gửi nhiều HTTPS traffic (443) ra public IP bên ngoài. Chuẩn đoán là application/API traffic bình thường qua NAT Gateway.<br>
+Đề xuất tiếp theo: Kiểm tra workload nào tạo nhiều outbound traffic nhất để tối ưu NAT cost hoặc phát hiện traffic bất thường.<br>
 ![Log Insights](./images/w6/observability/2c2_1.png)<br>
 ![Log Insights](./images/w6/observability/2c2_2.png)<br>
 **Case 3: Rejected Destinations: Detect SG/NACL reject nhiều nhất**<br>
-1) Mục đích: Detect outbound traffic lớn từ private subnet ra internet để kiểm tra bất thường và tối ưu NAT Gateway cost. “resource nào của tôi bị target nhiều nhất” <br>
-2) Kết quả: 10.50.2.218:23 và 10.50.1.212:23 bị reject nhiều nhất, cho thấy có nhiều IP bên ngoài đang scan Telnet vào các private IP này. Ngoài ra còn có probe vào port 3389 (RDP). <br>
-3) Kiểm tra các instance bị target có đang public ngoài ý muốn không và xác nhận Security Group đang block đúng các port nhạy cảm. <br>
+Mục đích: Detect outbound traffic lớn từ private subnet ra internet để kiểm tra bất thường và tối ưu NAT Gateway cost. “resource nào của tôi bị target nhiều nhất” <br>
+Kết quả: 10.50.2.218:23 và 10.50.1.212:23 bị reject nhiều nhất, cho thấy có nhiều IP bên ngoài đang scan Telnet vào các private IP này. Ngoài ra còn có probe vào port 3389 (RDP). <br>
+Đề xuất tiếp theo: Kiểm tra các instance bị target có đang public ngoài ý muốn không và xác nhận Security Group đang block đúng các port nhạy cảm. <br>
 ![Log Insights](./images/w6/observability/2c3_1.png)<br>
 ![Log Insights](./images/w6/observability/2c3_2.png)<br>
 
