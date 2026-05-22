@@ -197,30 +197,39 @@
 > - **Widget 4 (CWAgent):** `mem_used_percent` — RAM usage trên ECS EC2 host (namespace `CWAgent`)
 > - **Widget 5 (Compute tier):** Lambda `Errors` + `Invocations`
 
-### 4.2. CloudWatch Alarm — ALB 5XX
+### 4.2. CloudWatch Alarm
 
-<!-- 📸 SCREENSHOT: CloudWatch Console > Alarms > ALB_5XX_Alarm — showing alarm state (OK or ALARM) -->
+Case 1: EC2 high cpu alarm
+Mô tả: EC2 High CPU alarm được sử dụng để phát hiện sớm tình trạng server backend bị quá tải khi lưu lượng truy cập tăng đột biến hoặc ứng dụng xử lý request vượt quá tài nguyên cho phép, từ đó giảm nguy cơ chậm phản hồi và gián đoạn dịch vụ.
 
-![CloudWatch Alarm](./images/w6/observability/alarm-5xx.png)
+![CloudWatch Alarm](./images/w6/observability/1.1.png)
+![CloudWatch Alarm](./images/w6/observability/1.2.png)
+![CloudWatch Alarm](./images/w6/observability/1.3.png)
+Check case 1:
+Làm tăng CPU:
+$ for i in {1..16}; do yes > /dev/null & done
+$ top
+$ q
+$ killall yes
 
-> **Note:** Alarm `ALB_5XX_Alarm` trigger khi `HTTPCode_Target_5XX_Count > 5` trong 5 phút liên tục. Trạng thái hiện tại: OK — xác nhận API backend đang hoạt động ổn định.
+![CloudWatch Alarm](./images/w6/observability/1.4.png)
+Results: 
+Action thông báo email.
+![CloudWatch Alarm](./images/w6/observability/1.5.png)
+Check history trạng thái:
+![CloudWatch Alarm](./images/w6/observability/1.6.png)
 
 ### 4.3. Log Insights Query
 
-<!-- 📸 SCREENSHOT: CloudWatch Logs Insights > Query results — showing error log search -->
+Pattern 1:  Query này dùng để xác định các địa chỉ IP bị VPC Flow Logs từ chối nhiều nhất bằng cách đếm số lần REJECT theo từng IP nguồn.
+# Top rejected IPs from VPC Flow Logs (check 12h)
+filter action="REJECT"
+| stats count(*) by srcAddr
+| sort count desc | limit 10
 
-![Log Insights](./images/w6/observability/log-insights.png)
+![Log Insights](./images/w6/observability/qr1.png)
 
-> **Note:** Saved query trên CloudWatch Logs Insights tìm kiếm error patterns trong ECS backend log group `/ecs/xbrain/backend/us-dev`. Query mẫu:
->
-> ```
-> fields @timestamp, @message
-> | filter @message like /(?i)(error|exception|fail)/
-> | sort @timestamp desc
-> | limit 20
-> ```
 
----
 
 ## (5) MH-SEC — Self-Healing Security Guard
 
