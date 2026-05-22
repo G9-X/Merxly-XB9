@@ -46,7 +46,7 @@ Lambda chat trigger bedrock agent iam policy của nó tụi em sẽ chỉ cấp
 
 ảnh efs config gốc, data
 ![Recap-7](./images/w6/Recap/config-efsgoc-1.png)
-![Recap-8](./images/w6/Recap/efs-goc.png.png)
+![Recap-8](./images/w6/Recap/efs-goc.png)
 
 ảnh backup job
 ![Recap-](./images/w6/Recap/backup-job.png)
