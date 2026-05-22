@@ -115,7 +115,7 @@
 
 <!-- 📸 SCREENSHOT: AWS Lambda Console > Function cost-guard-lambda > Tab Code — showing function overview -->
 
-![Cost Guard Lambda](./images/w6/cost_guard/CouldTrail_Log_Lambda-Stop-Ec2%20(not%20by%20user).png)
+![Cost Guard Lambda](<./images/w6/cost_guard/CouldTrail_Log_Lambda-Stop-Ec2%20(not%20by%20user).png>)
 
 > **Note:** Lambda function `cost-guard-lambda` chạy Python 3.12, quét EC2 và RDS instances. Instances thiếu tag `keep=true` hoặc `Environment=dev` sẽ bị tự động dừng (stop).
 
@@ -167,7 +167,7 @@
 
 <!-- 📸 SCREENSHOT: CloudWatch Logs > Log group /aws/lambda/cost-guard-lambda — showing scan results -->
 
-![Cost Guard Logs](./images/w6/cost_guard/CouldTrail_Log_Lambda-Stop-Ec2%20(not%20by%20user).png)
+![Cost Guard Logs](<./images/w6/cost_guard/CouldTrail_Log_Lambda-Stop-Ec2%20(not%20by%20user).png>)
 
 > **Note:** Kết quả chạy thử Cost Guard Lambda. Log hiển thị danh sách EC2/RDS instances đã được quét và hành động stop (nếu có) trên các instance không có tag `keep=true`.
 
@@ -360,13 +360,19 @@ Toàn bộ hạ tầng W6 được quản lý 100% qua Terraform Infrastructure-
 
 ## (7) Bonus — Stretch Goals (Optional, +0.5 max)
 
-### Bonus 1: "Wasteful → Changed" Reflection (+0.25)
+### Bonus 1: gp2 → gp3 EBS Migration & IOPS Documentation (+0.25)
 
-During our Week 5 and Week 6 cloud architecture review, we identified significant cost waste in our dev environment. Specifically, the Amazon OpenSearch Serverless collection and Bedrock integration were active by default. OpenSearch Serverless costs $0.24 per OCU-hour, and with a minimum of 2 OCUs (1 for indexing, 1 for search), it generated a baseline cost of $0.48/hour, translating to ~$345/month even with zero traffic. To remediate this waste, we introduced the `enable_geekbrain` flag in our Terraform variables and set it to `false` in `variables.tf`, completely tearing down the idle OpenSearch and Bedrock resources. Additionally, we configured our RDS database and EBS volumes to use gp3 storage, achieving a 20% cost-per-GB reduction while preserving 3,000 baseline IOPS. This combined effort immediately reduced our monthly projected development cost by **$348.50/month**, optimizing our budget without impacting core API functionalities.
+Từ thiết kế hạ tầng Week 5, tụi em đã chủ động lựa chọn sử dụng loại lưu trữ **gp3** thay vì gp2 mặc định cho toàn bộ các instances (bao gồm ECS EC2 instances và RDS MySQL database).
 
-<!-- 📸 SCREENSHOT: Git diff showing enable_geekbrain = false, hoặc AWS Console showing OpenSearch resources removed -->
+**Lựa chọn cấu hình và sự phù hợp với Workload:**
 
-![Wasteful Changed Evidence](./images/w6/bonus/wasteful-changed.png)
+- **Thiết lập:** Cả ECS instances và RDS database đều được cấu hình dùng volume `storage_type = "gp3"` trực tiếp trong Terraform.
+- **IOPS / Throughput:** Tụi em sử dụng cấu hình baseline của gp3: **3,000 IOPS** và **125 MB/s throughput**.
+- **Lý do khớp với Workload Profile:** Workload hiện tại của dự án Merxly (môi trường dev/test) có lưu lượng truy cập không quá lớn và không đòi hỏi throughput cực cao liên tục. Baseline 3,000 IOPS là quá dư dả cho các thao tác CRUD cơ bản và test tính năng. Việc chọn gp3 giúp tiết kiệm ngay lập tức **20% chi phí lưu trữ/GB** so với gp2, đồng thời mang lại hiệu năng cao ổn định mà không cần tốn tiền mua thêm burst IOPS.
+
+<!-- 📸 SCREENSHOT: Chụp code Terraform (ví dụ file module/Database_MySQL/main.tf hiển thị storage_type = "gp3") hoặc RDS/EC2 Console showing gp3 type -->
+
+![EBS gp3 Evidence](./images/w6/bonus/ebs-gp3-evidence.png)
 
 ---
 
@@ -387,7 +393,7 @@ During our Week 5 and Week 6 cloud architecture review, we identified significan
 #### Break-Even & Recommendation
 
 - **Break-Even Point:** Since this is a 1-year contract, the total annual commitment is **$131.40**. The break-even point against On-Demand occurs at **8.6 months** of continuous usage ($131.40 / $15.18).
-- **Justified Deferral Decision:** Because our development environment and workshop lifecycle is only **2 weeks**, purchasing a 1-year Savings Plan would result in a net loss of **$127.70** (paying for the remaining 11.5 months of idle commitment). Therefore, we justify deferring the Savings Plan purchase. Instead, we implement Auto Scaling to scale EC2 instances to 0 during off-hours and use the `enable_geekbrain` toggle to tear down expensive serverless components when not in active development.
+- **Justified Deferral Decision:** Vì tài khoản AWS workshop thực chất chỉ được cấp phát và hoạt động **3 ngày mỗi tuần** (bị xóa hoặc khóa vào các ngày còn lại), việc mua Savings Plan kỳ hạn 1 năm sẽ là một quyết định lãng phí tài chính khổng lồ. Chúng tôi sẽ phải trả tiền cho toàn bộ 365 ngày nhưng chỉ thực sự sử dụng hạ tầng chưa tới 150 ngày. Do đó, việc trì hoãn (defer) mua Savings Plan và tiếp tục sử dụng On-Demand kết hợp với Auto Scaling/Cost Guard Lambda là quyết định FinOps tối ưu nhất cho profile của dự án này.
 
 <!-- 📸 SCREENSHOT: (Optional) AWS Pricing Calculator showing t3.small pricing comparison -->
 

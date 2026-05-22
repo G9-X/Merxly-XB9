@@ -14,7 +14,7 @@
 * **Database Engine:** Amazon RDS for MySQL
 * **Database Paradigm:** Relational Database
 
----
+----
 
 ## (2) Data Access Pattern Log
 
