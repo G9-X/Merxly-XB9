@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Merxly - Manual Testing Guide</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0f172a; color: #e2e8f0; overflow: hidden; }
+
+.slide-container { width: 100vw; height: 100vh; position: relative; }
+.slide { display: none; width: 100%; height: 100%; padding: 60px 80px; flex-direction: column; justify-content: center; position: absolute; top: 0; left: 0; animation: fadeIn 0.3s ease; }
+.slide.active { display: flex; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+h1 { font-size: 3rem; font-weight: 800; margin-bottom: 1rem; background: linear-gradient(135deg, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+h2 { font-size: 2.2rem; font-weight: 700; margin-bottom: 1.5rem; color: #f8fafc; }
+h3 { font-size: 1.4rem; font-weight: 600; margin-bottom: 0.75rem; color: #93c5fd; }
+p { font-size: 1.1rem; line-height: 1.7; color: #cbd5e1; margin-bottom: 0.5rem; }
+.subtitle { font-size: 1.3rem; color: #94a3b8; margin-bottom: 2rem; }
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 1rem; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; margin-top: 1rem; }
+
+.card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 1.5rem; }
+.card h3 { margin-bottom: 0.5rem; }
+.card ul { list-style: none; padding: 0; }
+.card ul li { padding: 0.3rem 0; color: #cbd5e1; font-size: 0.95rem; }
+.card ul li::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 10px; }
+.card ul li.check::before { background: #34d399; }
+.card ul li.warn::before { background: #fbbf24; }
+.card ul li.info::before { background: #60a5fa; }
+
+.badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; margin-right: 8px; margin-bottom: 4px; }
+.badge-critical { background: #ef444433; color: #fca5a5; border: 1px solid #ef4444; }
+.badge-high { background: #f9731633; color: #fdba74; border: 1px solid #f97316; }
+.badge-medium { background: #eab30833; color: #fde047; border: 1px solid #eab308; }
+.badge-pass { background: #22c55e33; color: #86efac; border: 1px solid #22c55e; }
+.badge-role { background: #8b5cf633; color: #c4b5fd; border: 1px solid #8b5cf6; }
+
+table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.9rem; }
+table th { text-align: left; padding: 10px 12px; background: #1e293b; color: #93c5fd; border-bottom: 2px solid #334155; }
+table td { padding: 10px 12px; border-bottom: 1px solid #1e293b; color: #cbd5e1; }
+table tr:hover td { background: #1e293b55; }
+
+code { background: #1e293b; padding: 2px 8px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: #93c5fd; }
+
+.nav { position: fixed; bottom: 30px; right: 40px; display: flex; gap: 12px; z-index: 100; }
+.nav button { background: #334155; border: 1px solid #475569; color: #e2e8f0; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; }
+.nav button:hover { background: #475569; }
+.nav button:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.progress { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, #60a5fa, #a78bfa); transition: width 0.3s; z-index: 100; }
+
+.slide-num { position: fixed; bottom: 35px; left: 40px; color: #64748b; font-size: 0.85rem; }
+
+.steps { counter-reset: step; margin-top: 1rem; }
+.steps li { counter-increment: step; padding: 0.6rem 0; padding-left: 2.5rem; position: relative; color: #cbd5e1; font-size: 1rem; }
+.steps li::before { content: counter(step); position: absolute; left: 0; width: 24px; height: 24px; background: #334155; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; color: #93c5fd; }
+
+.url { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 8px 16px; font-family: monospace; color: #60a5fa; margin: 0.5rem 0; display: inline-block; }
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<div class="slide-num" id="slideNum"></div>
+
+<div class="slide-container" id="slides">
+
+<!-- Slide 1: Title -->
+<div class="slide active">
+  <h1>Merxly Manual Testing Guide</h1>
+  <p class="subtitle">Huong dan test thu cong tat ca cac page theo 3 role: Admin, Customer, StoreOwner</p>
+  <div class="grid-3" style="margin-top: 2rem;">
+    <div class="card">
+      <h3>Accounts</h3>
+      <ul>
+        <li class="info">Admin: admin@merxly.com / Admin@123456</li>
+        <li class="info">Customer: e2e-customer@merxly.test / Test@12345</li>
+        <li class="info">StoreOwner: e2e-storeowner@merxly.test / Test@12345</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>URLs</h3>
+      <ul>
+        <li class="info">Frontend: http://localhost</li>
+        <li class="info">Backend API: http://localhost:7052</li>
+        <li class="info">Swagger: http://localhost:7052/swagger</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Preconditions</h3>
+      <ul>
+        <li class="check">Docker Compose running</li>
+        <li class="check">MySQL seeded (admin account)</li>
+        <li class="check">Store "E2E Test Store" approved</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 2: Overview -->
+<div class="slide">
+  <h2>Test Coverage Overview</h2>
+  <p class="subtitle">29 spec files, 125 automated tests + manual checks below</p>
+  <table>
+    <tr><th>Category</th><th>Pages</th><th>Role</th><th>Priority</th></tr>
+    <tr><td>Authentication</td><td>Login, Register, Logout</td><td>All</td><td><span class="badge badge-critical">Critical</span></td></tr>
+    <tr><td>Public Pages</td><td>Home, Search, Product Detail</td><td>Guest/All</td><td><span class="badge badge-high">High</span></td></tr>
+    <tr><td>Customer - Shopping</td><td>Cart, Wishlist, Checkout</td><td><span class="badge badge-role">Customer</span></td><td><span class="badge badge-critical">Critical</span></td></tr>
+    <tr><td>Customer - Account</td><td>Profile, Addresses, Payment Methods, Orders</td><td><span class="badge badge-role">Customer</span></td><td><span class="badge badge-high">High</span></td></tr>
+    <tr><td>Store Management</td><td>Dashboard, Products, Orders, Locations, Payments</td><td><span class="badge badge-role">StoreOwner</span></td><td><span class="badge badge-high">High</span></td></tr>
+    <tr><td>Admin</td><td>Dashboard, Stores, Categories, Users</td><td><span class="badge badge-role">Admin</span></td><td><span class="badge badge-high">High</span></td></tr>
+    <tr><td>Flows</td><td>Purchase, Store Onboarding, Admin Approval</td><td>Multi-role</td><td><span class="badge badge-critical">Critical</span></td></tr>
+  </table>
+</div>
+
+<!-- Slide 3: Auth Tests -->
+<div class="slide">
+  <h2>1. Authentication</h2>
+  <div class="grid-2">
+    <div class="card">
+      <h3>Login Page</h3>
+      <div class="url">http://localhost/login</div>
+      <ol class="steps">
+        <li>Mo trang login - form hien thi email + password</li>
+        <li>Nhap sai password -> hien thong bao loi</li>
+        <li>Nhap dung -> redirect theo role (Customer -> /, Admin -> /admin, StoreOwner -> /store)</li>
+        <li>Kiem tra token luu trong localStorage key "auth"</li>
+        <li>Refresh trang -> van giu dang nhap</li>
+      </ol>
+    </div>
+    <div class="card">
+      <h3>Register Page</h3>
+      <div class="url">http://localhost/register</div>
+      <ol class="steps">
+        <li>Mo trang register - form co firstName, lastName, email, password</li>
+        <li>Nhap email da ton tai -> hien loi</li>
+        <li>Nhap password yeu (< 8 ky tu) -> validation loi</li>
+        <li>Dang ky thanh cong -> tu dong dang nhap</li>
+        <li>Kiem tra role mac dinh la "Customer"</li>
+      </ol>
+    </div>
+  </div>
+  <div class="card" style="margin-top: 1.5rem;">
+    <h3>Logout & Session Expiry (Bug Fix #2)</h3>
+    <ol class="steps">
+      <li>Dang nhap -> nhan Logout -> redirect ve /login, localStorage xoa "auth"</li>
+      <li><span class="badge badge-high">Bug Fix</span> Mo DevTools > Application > localStorage > sua expiresAt thanh qua khu -> refresh -> redirect ve /login (401 interceptor)</li>
+      <li>Xoa token trong localStorage -> navigate toi /cart -> redirect ve /login</li>
+    </ol>
+  </div>
+</div>
+
+<!-- Slide 4: Public Pages -->
+<div class="slide">
+  <h2>2. Public Pages (Guest)</h2>
+  <div class="grid-2">
+    <div class="card">
+      <h3>Home Page</h3>
+      <div class="url">http://localhost/</div>
+      <ol class="steps">
+        <li>Hien thi header voi search bar + navigation</li>
+        <li>Hien thi danh sach san pham (neu co)</li>
+        <li>Hien thi categories</li>
+        <li>Click product -> navigate toi /products/:id</li>
+      </ol>
+    </div>
+    <div class="card">
+      <h3>Search Page</h3>
+      <div class="url">http://localhost/search</div>
+      <ol class="steps">
+        <li>Hien thi search input + filters</li>
+        <li>Go ten san pham -> ket qua hien thi</li>
+        <li>Filter theo category -> ket qua thay doi</li>
+        <li>Khong tim thay -> hien empty state</li>
+      </ol>
+    </div>
+  </div>
+  <div class="card" style="margin-top: 1.5rem;">
+    <h3>Product Detail Page (Bug Fix #6 - XSS)</h3>
+    <div class="url">http://localhost/products/:id</div>
+    <ol class="steps">
+      <li>Hien thi ten, gia, hinh anh, mo ta san pham</li>
+      <li>Chon variant (size/color) -> gia cap nhat</li>
+      <li><span class="badge badge-critical">XSS Fix</span> Kiem tra description khong render raw HTML (DOMPurify sanitize). Neu backend tra ve <code>&lt;script&gt;alert(1)&lt;/script&gt;</code> -> khong execute</li>
+      <li>Click "Add to Cart" khi chua dang nhap -> hien login modal hoac redirect</li>
+    </ol>
+  </div>
+</div>
+
+<!-- Slide 5: Customer - Cart -->
+<div class="slide">
+  <h2>3. Customer - Cart (Bug Fix #1, #13)</h2>
+  <p class="subtitle">Login as: e2e-customer@merxly.test / Test@12345</p>
+  <div class="grid-2">
+    <div class="card">
+      <h3>Cart Page</h3>
+      <div class="url">http://localhost/cart</div>
+      <ol class="steps">
+        <li>Cart rong -> hien "empty cart" message</li>
+        <li>Them san pham tu product detail -> hien trong cart</li>
+        <li>Thay doi so luong -> tong tien cap nhat</li>
+        <li>Xoa item -> bien mat khoi cart</li>
+        <li><span class="badge badge-medium">Bug Fix #13</span> "Select All" chi chon nhung item available (khong chon item het hang)</li>
+      </ol>
+    </div>
+    <div class="card">
+      <h3>Checkout (Bug Fix #1 - CRITICAL)</h3>
+      <div class="url">http://localhost/checkout</div>
+      <ol class="steps">
+        <li>Chon dia chi + phuong thuc thanh toan</li>
+        <li>Nhap the test: 4242 4242 4242 4242, 12/30, 123</li>
+        <li>Thanh toan thanh cong -> order confirmation</li>
+        <li><span class="badge badge-critical">Bug Fix #1</span> Thu dung the bi tu choi: 4000 0000 0000 0002 -> payment fail -> nhan "Retry" -> KHONG tao don hang trung (reuse clientSecret)</li>
+        <li>Sau retry voi the hop le -> chi co 1 order duy nhat</li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 6: Customer - Account -->
+<div class="slide">
+  <h2>4. Customer - Account Management</h2>
+  <p class="subtitle">Login as: e2e-customer@merxly.test / Test@12345</p>
+  <div class="grid-3">
+    <div class="card">
+      <h3>Profile</h3>
+      <div class="url">/user-account/profile</div>
+      <ul>
+        <li class="check">Hien thi thong tin user</li>
+        <li class="check">Cap nhat ten, avatar</li>
+        <li class="check">Doi mat khau</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Addresses</h3>
+      <div class="url">/user-account/addresses</div>
+      <ul>
+        <li class="check">Danh sach dia chi</li>
+        <li class="check">Them dia chi moi</li>
+        <li class="check">Sua/xoa dia chi</li>
+        <li class="check">Dat default address</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Payment Methods</h3>
+      <div class="url">/user-account/payment-methods</div>
+      <ul>
+        <li class="check">Danh sach payment methods</li>
+        <li class="check">Them the moi (Stripe)</li>
+        <li class="check">Xoa payment method</li>
+      </ul>
+    </div>
+  </div>
+  <div class="card" style="margin-top: 1.5rem;">
+    <h3>Order History</h3>
+    <div class="url">http://localhost/user-account/order-history</div>
+    <ol class="steps">
+      <li>Hien thi danh sach don hang (hoac empty state)</li>
+      <li>Filter theo status: All / Pending / Processing / Shipped / Delivered</li>
+      <li>Click don hang -> xem chi tiet (suborder per store)</li>
+      <li>Kiem tra trang thai don hang cap nhat dung</li>
+    </ol>
+  </div>
+</div>
+
+<!-- Slide 7: Customer - Wishlist -->
+<div class="slide">
+  <h2>5. Customer - Wishlist</h2>
+  <p class="subtitle">Login as: e2e-customer@merxly.test / Test@12345</p>
+  <div class="card">
+    <h3>Wishlist Page</h3>
+    <div class="url">http://localhost/wishlist</div>
+    <ol class="steps">
+      <li>Wishlist rong -> hien empty state</li>
+      <li>Tu product detail -> click "Add to Wishlist" (heart icon)</li>
+      <li>Quay lai wishlist -> san pham hien thi</li>
+      <li>Click san pham -> navigate toi product detail</li>
+      <li>Xoa khoi wishlist -> bien mat</li>
+      <li>"Add to Cart" tu wishlist -> item chuyen sang cart</li>
+    </ol>
+  </div>
+</div>
+
+<!-- Slide 8: Store Owner - Dashboard -->
+<div class="slide">
+  <h2>6. Store Owner - Dashboard & Products</h2>
+  <p class="subtitle">Login as: e2e-storeowner@merxly.test / Test@12345</p>
+  <div class="grid-2">
+    <div class="card">
+      <h3>Store Dashboard</h3>
+      <div class="url">http://localhost/store</div>
+      <ol class="steps">
+        <li>Hien thi stats: Revenue, Orders, Products, Rating</li>
+        <li>Hien thi charts (Revenue Overview, Sales by Category)</li>
+        <li>Hien thi Low Stock Alert</li>
+        <li>Hien thi Recent Orders</li>
+        <li>Sidebar navigation hoat dong dung</li>
+      </ol>
+    </div>
+    <div class="card">
+      <h3>Products Management</h3>
+      <div class="url">http://localhost/store/products</div>
+      <ol class="steps">
+        <li>Danh sach san pham (hoac empty)</li>
+        <li>Click "New Product" -> /store/products/new</li>
+        <li>Dien form: name, description, category, images</li>
+        <li>Them variants (size, color) voi gia rieng</li>
+        <li>Save -> san pham xuat hien trong list</li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 9: Store Owner - Create Product (Bug Fixes) -->
+<div class="slide">
+  <h2>7. Store Owner - Create Product (Bug Fixes)</h2>
+  <p class="subtitle">Kiem tra cac bug fix lien quan den product creation</p>
+  <div class="grid-2">
+    <div class="card">
+      <h3>Bug Fix #7 - Memory Leak (VariantMediaModal)</h3>
+      <div class="url">http://localhost/store/products/new</div>
+      <ol class="steps">
+        <li>Tao variant -> click "Add Media"</li>
+        <li>Upload nhieu hinh anh</li>
+        <li>Xoa 1 hinh -> URL.revokeObjectURL duoc goi (check DevTools Memory)</li>
+        <li>Dong modal -> tat ca object URLs duoc revoke</li>
+        <li>Mo lai modal -> khong bi leak memory</li>
+      </ol>
+    </div>
+    <div class="card">
+      <h3>Bug Fix #8, #10, #12</h3>
+      <ol class="steps">
+        <li><span class="badge badge-high">#8</span> buildVariantsDto() la pure function - them variant roi preview -> khong bi side effect</li>
+        <li><span class="badge badge-medium">#10</span> Them attribute moi -> ID bat dau bang "local-attr-" (khong trung voi real IDs tu server)</li>
+        <li><span class="badge badge-medium">#12</span> Save product -> "Unsaved changes" warning bien mat (snapshot trimmed)</li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 10: Store Owner - Orders, Locations, Payments -->
+<div class="slide">
+  <h2>8. Store Owner - Orders, Locations, Payments</h2>
+  <p class="subtitle">Login as: e2e-storeowner@merxly.test / Test@12345</p>
+  <div class="grid-3">
+    <div class="card">
+      <h3>Orders</h3>
+      <div class="url">/store/orders</div>
+      <ul>
+        <li class="check">Danh sach SubOrders</li>
+        <li class="check">Filter theo status</li>
+        <li class="check">Update status (Processing -> Shipped)</li>
+        <li class="check">Export CSV</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Locations</h3>
+      <div class="url">/store/locations</div>
+      <ul>
+        <li class="check">Danh sach dia chi kho</li>
+        <li class="check">Them location moi</li>
+        <li class="check">Sua/xoa location</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Payments</h3>
+      <div class="url">/store/payments</div>
+      <ul>
+        <li class="check">Stripe Connect onboarding</li>
+        <li class="check">Xem lich su thanh toan</li>
+        <li class="check">Trang thai payout</li>
+      </ul>
+    </div>
+  </div>
+  <div class="card" style="margin-top: 1.5rem;">
+    <h3>My Store</h3>
+    <div class="url">http://localhost/store/my-store</div>
+    <ol class="steps">
+      <li>Hien thi thong tin store (ten, mo ta, logo, banner)</li>
+      <li>Cap nhat thong tin store -> save thanh cong</li>
+    </ol>
+  </div>
+</div>
+
+<!-- Slide 11: Admin -->
+<div class="slide">
+  <h2>9. Admin Panel</h2>
+  <p class="subtitle">Login as: admin@merxly.com / Admin@123456</p>
+  <div class="grid-2">
+    <div class="card">
+      <h3>Admin Dashboard</h3>
+      <div class="url">http://localhost/admin</div>
+      <ol class="steps">
+        <li>Hien thi overview stats: Stores, Users, Revenue, Pending</li>
+        <li>Sidebar co: Dashboard, Website, Stores (expand), Users (expand), Settings</li>
+        <li>Click "Stores" -> expand submenu (All Stores, Verification, Performance, Reports)</li>
+      </ol>
+    </div>
+    <div class="card">
+      <h3>Store Management</h3>
+      <div class="url">http://localhost/admin/stores/all</div>
+      <ol class="steps">
+        <li>Danh sach tat ca stores</li>
+        <li>Search store theo ten</li>
+        <li>Click store -> xem chi tiet</li>
+      </ol>
+      <div class="url" style="margin-top: 0.5rem;">http://localhost/admin/stores/verification</div>
+      <ol class="steps">
+        <li>Danh sach store pending approval</li>
+        <li>Click -> xem ho so (CCCD, giay phep KD)</li>
+        <li>Approve / Reject store</li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 12: Admin - Categories & Users -->
+<div class="slide">
+  <h2>10. Admin - Categories & Users</h2>
+  <p class="subtitle">Login as: admin@merxly.com / Admin@123456</p>
+  <div class="grid-2">
+    <div class="card">
+      <h3>Categories</h3>
+      <div class="url">http://localhost/admin/categories</div>
+      <ol class="steps">
+        <li>Hien thi category tree (parent-child)</li>
+        <li>Them category moi</li>
+        <li>Sua ten / mo ta category</li>
+        <li>Xoa category (chi khi khong co san pham)</li>
+        <li>Drag-drop sap xep (neu co)</li>
+      </ol>
+    </div>
+    <div class="card">
+      <h3>Users</h3>
+      <div class="url">http://localhost/admin/users</div>
+      <ol class="steps">
+        <li>Danh sach users voi role, email, ten</li>
+        <li>Search theo email/ten</li>
+        <li>Xem chi tiet user</li>
+        <li>Thay doi role (neu co feature)</li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 13: End-to-End Flows -->
+<div class="slide">
+  <h2>11. End-to-End Flows</h2>
+  <div class="grid-2">
+    <div class="card">
+      <h3>Full Purchase Flow</h3>
+      <ol class="steps">
+        <li>Guest -> Search san pham -> Xem chi tiet</li>
+        <li>Click "Add to Cart" -> redirect login</li>
+        <li>Dang nhap Customer -> quay lai product</li>
+        <li>Add to Cart -> Mo /cart</li>
+        <li>Proceed to Checkout -> Chon address + payment</li>
+        <li>Pay voi the 4242... -> Order confirmed</li>
+        <li>Kiem tra /user-account/order-history co don hang moi</li>
+        <li>Login StoreOwner -> /store/orders co SubOrder moi</li>
+      </ol>
+    </div>
+    <div class="card">
+      <h3>Store Onboarding Flow</h3>
+      <ol class="steps">
+        <li>Dang ky tai khoan moi (Customer role)</li>
+        <li>Navigate toi /sign-up-new-store</li>
+        <li>Dien form: ten store, CCCD, giay phep, SDT</li>
+        <li>Submit -> store trang thai "Pending"</li>
+        <li>Login Admin -> /admin/stores/verification</li>
+        <li>Xem ho so -> Click "Approve" (commission 5%)</li>
+        <li>Login lai Customer -> role thanh StoreOwner</li>
+        <li>Navigate /store -> Store Dashboard hien thi</li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 14: Bug Fix Verification -->
+<div class="slide">
+  <h2>12. Bug Fix Verification Checklist</h2>
+  <table>
+    <tr><th>#</th><th>Severity</th><th>Bug</th><th>How to Verify</th></tr>
+    <tr><td>1</td><td><span class="badge badge-critical">CRITICAL</span></td><td>Duplicate orders on retry</td><td>Dung the 4000000000000002, fail, retry voi 4242... -> chi 1 order</td></tr>
+    <tr><td>2</td><td><span class="badge badge-high">HIGH</span></td><td>401 no redirect</td><td>Xoa token trong localStorage -> call API -> redirect /login</td></tr>
+    <tr><td>3</td><td><span class="badge badge-medium">MEDIUM</span></td><td>Console.log API URL</td><td>Mo DevTools Console -> khong thay log API base URL</td></tr>
+    <tr><td>5</td><td><span class="badge badge-medium">MEDIUM</span></td><td>Variant init</td><td>Mo product detail co variants -> default variant duoc chon</td></tr>
+    <tr><td>6</td><td><span class="badge badge-critical">HIGH</span></td><td>XSS in description</td><td>Product voi &lt;img onerror=alert(1)&gt; -> khong execute JS</td></tr>
+    <tr><td>7</td><td><span class="badge badge-high">HIGH</span></td><td>Memory leak media</td><td>Upload/remove images nhieu lan -> Memory tab khong tang</td></tr>
+    <tr><td>8</td><td><span class="badge badge-high">HIGH</span></td><td>Side effect variants</td><td>Preview variants -> data khong bi modify</td></tr>
+    <tr><td>10</td><td><span class="badge badge-medium">MEDIUM</span></td><td>Attribute ID prefix</td><td>Them attribute -> ID bat dau "local-attr-"</td></tr>
+    <tr><td>11</td><td><span class="badge badge-medium">MEDIUM</span></td><td>Redirect loop</td><td>Dang nhap -> vao /login -> redirect dung (khong loop)</td></tr>
+    <tr><td>12</td><td><span class="badge badge-medium">MEDIUM</span></td><td>Snapshot after save</td><td>Save product -> "Unsaved changes" warning het</td></tr>
+    <tr><td>13</td><td><span class="badge badge-medium">MEDIUM</span></td><td>Select-all unavailable</td><td>Cart co item het hang -> Select All bo qua item do</td></tr>
+  </table>
+</div>
+
+<!-- Slide 15: Run E2E -->
+<div class="slide">
+  <h2>13. Run Automated E2E Tests</h2>
+  <div class="card">
+    <h3>Commands</h3>
+    <ol class="steps">
+      <li>Chay Docker: <code>docker compose up -d</code></li>
+      <li>Vao frontend dir: <code>cd merxly_frontend</code></li>
+      <li>Cai dependencies: <code>npm install</code></li>
+      <li>Chay full suite: <code>STORE_OWNER_EMAIL=e2e-storeowner@merxly.test STORE_OWNER_PASSWORD=Test@12345 npx playwright test</code></li>
+      <li>Xem report: <code>npx playwright show-report</code></li>
+    </ol>
+  </div>
+  <div class="grid-2" style="margin-top: 1.5rem;">
+    <div class="card">
+      <h3>Expected Results</h3>
+      <ul>
+        <li class="check">125 tests passed</li>
+        <li class="warn">8 skipped (product-detail, no products in DB)</li>
+        <li class="check">0 failed</li>
+        <li class="info">Duration: ~2 minutes</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Run Specific Suites</h3>
+      <ul>
+        <li class="info"><code>npx playwright test e2e/specs/auth/</code></li>
+        <li class="info"><code>npx playwright test e2e/specs/customer/</code></li>
+        <li class="info"><code>npx playwright test e2e/specs/store/</code></li>
+        <li class="info"><code>npx playwright test e2e/specs/admin/</code></li>
+        <li class="info"><code>npx playwright test e2e/specs/flows/</code></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 16: Summary -->
+<div class="slide">
+  <h2>Summary</h2>
+  <div class="grid-2">
+    <div class="card">
+      <h3>What Was Fixed</h3>
+      <ul>
+        <li class="check">1 CRITICAL: duplicate orders on payment retry</li>
+        <li class="check">4 HIGH: 401 interceptor, XSS, memory leak, side effects</li>
+        <li class="check">6 MEDIUM: variant init, prefix, redirect loop, snapshot, select-all, console.log</li>
+        <li class="check">3 Code Review fixes: stale clientSecret, React state sync, ID collision</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>What Was Added</h3>
+      <ul>
+        <li class="check">Playwright E2E infrastructure (fixtures, helpers, page objects)</li>
+        <li class="check">29 spec files covering all pages</li>
+        <li class="check">125 automated tests across 3 roles</li>
+        <li class="check">Global setup with API-based authentication</li>
+        <li class="info">PR: github.com/G9-X/Merxly-XB9/pull/27</li>
+      </ul>
+    </div>
+  </div>
+  <div style="margin-top: 2rem; text-align: center;">
+    <p style="font-size: 1.3rem; color: #60a5fa;">Use arrow keys or buttons to navigate slides</p>
+  </div>
+</div>
+
+</div>
+
+<div class="nav">
+  <button id="prev" onclick="changeSlide(-1)">&#8592; Previous</button>
+  <button id="next" onclick="changeSlide(1)">Next &#8594;</button>
+</div>
+
+<script>
+let current = 0;
+const slides = document.querySelectorAll('.slide');
+const total = slides.length;
+
+function showSlide(n) {
+  slides[current].classList.remove('active');
+  current = (n + total) % total;
+  slides[current].classList.add('active');
+  document.getElementById('progress').style.width = ((current + 1) / total * 100) + '%';
+  document.getElementById('slideNum').textContent = (current + 1) + ' / ' + total;
+  document.getElementById('prev').disabled = current === 0;
+  document.getElementById('next').disabled = current === total - 1;
+}
+
+function changeSlide(dir) { showSlide(current + dir); }
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === ' ') changeSlide(1);
+  if (e.key === 'ArrowLeft') changeSlide(-1);
+});
+
+showSlide(0);
+</script>
+</body>
+</html>

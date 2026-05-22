@@ -15,7 +15,8 @@ export const PublicRoute = ({ children }: PublicRouteProps) => {
 
   if (isAuthenticated) {
     const fromLocation = (location.state as { from?: Location })?.from;
-    if (fromLocation) {
+    const publicPaths = ['/login', '/register'];
+    if (fromLocation && !publicPaths.includes(fromLocation.pathname)) {
       return (
         <Navigate
           to={fromLocation.pathname + fromLocation.search}

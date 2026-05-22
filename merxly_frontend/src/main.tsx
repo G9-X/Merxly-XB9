@@ -27,7 +27,7 @@ createRoot(document.getElementById('root')!).render(
         </AuthProvider>
         <ToastContainer position='top-right' autoClose={3000} />
       </BrowserRouter>
-      <ReactQueryDevtools initialIsOpen={false} />
+      {/* <ReactQueryDevtools initialIsOpen={false} /> */}
     </QueryClientProvider>
   </StrictMode>,
 );
