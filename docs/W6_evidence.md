@@ -215,8 +215,8 @@ $ killall yes<br>
 ![CloudWatch Alarm](./images/w6/observability/1.4.png)<br>
 Results: <br>
 Action thông báo email.<br>
-![CloudWatch Alarm](./images/w6/observability/1.5.png)<br>
-Check history trạng thái:
+![CloudWatch Alarm](./images/w6/observability/1.5.jpng)<br>
+Check history trạng thái:<br>
 ![CloudWatch Alarm](./images/w6/observability/1.6.png)<br>
 ![CloudWatch Alarm](./images/w6/observability/1.7.png)<br>
 <br>
