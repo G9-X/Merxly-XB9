@@ -149,7 +149,7 @@ Phần api key api gateway tuần trước tụi em bị lộ ở header, tuần
 
 <!-- 📸 SCREENSHOT: AWS Lambda Console > Function cost-guard-lambda > Tab Code — showing function overview -->
 
-![Cost Guard Lambda](<./images/w6/cost_guard/CouldTrail_Log_Lambda-Stop-Ec2%20(not%20by%20user).png>)
+![Cost Guard Lambda](./images/w6/cost_guard/lambda.png)
 
 > **Note:** Lambda function `cost-guard-lambda` chạy Python 3.12, quét EC2 và RDS instances. Instances thiếu tag `keep=true` hoặc `Environment=dev` sẽ bị tự động dừng (stop).
 
