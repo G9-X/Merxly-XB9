@@ -227,6 +227,20 @@ Check history trạng thái:<br>
 ACtion case 2,3,4: <br>
 ![CloudWatch Alarm](./images/w6/observability/case2.2.png)<br>
 
+##**BONUS**<br>
+**Composite CloudWatch Alarm: Service-Availability-Confirmed**<br>
+**Logic:** Composite alarm xác nhận sự cố availability chỉ khi backend ALB trả nhiều lỗi 5XX đồng thời với target unhealthy hoặc ECS service thiếu running task.<br>
+ALARM("ALB-Target-5XX-High") <br>
+AND  <br>
+(<br>
+  ALARM("ALB-UnHealthyHostCount")<br>
+  OR<br>
+  ALARM("ECS-RunningTaskCount-Low")<br>
+)<br>
+**lý do**:Trong hệ thống này, nếu chỉ dùng alarm ALB-Target-5XX-High thì các lỗi 5XX tạm thời cũng có thể gửi cảnh báo dù ECS service vẫn healthy. Để giảm alarm fatigue, composite alarm chỉ trigger khi lỗi 5XX xảy ra đồng thời với: ALB có unhealthy target hoặc ECS thiếu running task. Điều này giúp tránh alert không cần thiết và chỉ cảnh báo khi hệ thống thật sự có sự cố availability. <br>
+![bonus_Alarm](./images/w6/observability/BN1.png)<br>
+![bonus_Alarm](./images/w6/observability/BN2.png)<br>
+
 ### 4.3. Log Insights Query
 **Queries**<br>
 ![Log Insights](./images/w6/observability/2.1.png)<br>
