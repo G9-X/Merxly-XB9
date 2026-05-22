@@ -18,6 +18,52 @@
 - **Repo:** [G9-X/Terraform-G9](https://github.com/G9-X/Terraform-G9)
 - **Previous Evidence:** [W5 Evidence Pack](./W5_evidence.md)
 
+Ở tuần thứ 3 evidence pack thì khi chụp bọn em đã chụp mỗi log khi con bedrock trả lời, nên chưa show rõ là có sài RAG hay invoke model thuần. Ở tuần 3 khi đó, tụi em chưa sài bedrock agent, mà chỉ tạo knowledge base rồi chuẩn bị sẵn dữ liệu ở s3, rồi code lambda sẽ sử dụng hàm retrieve kb_id, sau khi có dữ liệu, mới sài hàm converse invoke model để nó trả lời. Còn ở tuần 4 và 5 bọn em đã cải tiến thêm, tạo Bedrock Agent, để agent quyết định xem câu hỏi đó liệu nó sẽ sử dụng kb để có dữ liệu trả lời hay sẽ gọi tool từ action group để lấy dữ liệu rồi mới gen câu trả lời
+
+Ảnh code lambda tuần thứ 3
+![Lambda-w3-1](./images/w6/Recap/Lambda_w3_1.png)
+![Lambda-w3-2](./images/w6/Recap/Lambda_w3_2.png)
+
+Ảnh lambda ở hiện tại
+
+![Recap-1](./images/w6/Recap/Lambda-chat.jpeg)
+![Recap-2](./images/w6/Recap/BedrockAgent-Config.png)
+
+Phần Secret Managers của DB ở W3 chưa show nên tụi e cap lại ở pack tuần này
+![Recap-3](./images/w6/Recap/SecretDB.png)
+Secret của DB sẽ được set ở enviroment variable, task definitions ở ecs
+![Recap-4](./images/w6/Recap/Task-variables.png)
+Lambda chat trigger bedrock agent iam policy của nó tụi em sẽ chỉ cấp cho nó invoke tới agent đã tạo, và ở tuần này policy của lambda chat sẽ có thêm policy put metric data 
+![Recap-5](./images/w6/Recap/Lambda-Policy.png)
+
+Đó là những gì ở tuần 3 và nó đã được thay đổi gì ở w5-w6 hiện tại.
+
+Ở w5 vừa rồi , phần backup chưa bật backup vault lock nhưng hiện tại thì tụi em bị access denied phần này nên chưa tạo 
+
+![Recap-6](./images/w6/Recap/Vault-lock-denied.jpeg)
+	
+Ở phần restore backup w5 vừa rồi khi chạy tụi em chưa chứng minh được dữ liệu thật đã restore chưa nên tụi em bổ sung ảnh tuần này
+
+ảnh efs config gốc, data
+![Recap-7](./images/w6/Recap/config-efsgoc-1.png)
+![Recap-8](./images/w6/Recap/efs-goc.png.png)
+
+ảnh backup job
+![Recap-](./images/w6/Recap/backup-job.png)
+
+ảnh efs backup, data
+![Recap-9](./images/w6/Recap/config-efsbackup.png)
+![Recap-10](./images/w6/Recap/data-efs-backup.png)
+
+Phần api key api gateway tuần trước tụi em bị lộ ở header, tuần này tụi em đã fix bằng cách cho fe đi tới backend, để backend sử dụng key từ secret manager để gọi tới api gateway và sẽ không bị lộ key như tuần vừa rồi
+
+![Recap-11](./images/w6/Recap/secret-api.png)
+![Recap-12](./images/w6/Recap/Task-variables.png)
+![Recap-13](./images/w6/Recap/backend-1.png)
+![Recap-14](./images/w6/Recap/backend-2.png)
+![Recap-15](./images/w6/Recap/frontend.png)
+
+
 ---
 
 ## (2) MH-COST-V — Cost Visibility & Attribution
