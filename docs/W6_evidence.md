@@ -227,14 +227,26 @@ Check history trạng thái:<br>
 ![CloudWatch Alarm](./images/w6/observability/case4.1.png)<br>
 
 ### 4.3. Log Insights Query
-
-Pattern 1:  Query này dùng để xác định các địa chỉ IP bị VPC Flow Logs từ chối nhiều nhất bằng cách đếm số lần REJECT theo từng IP nguồn.<br>
-Top rejected IPs from VPC Flow Logs (check 12h)<br>
-filter action="REJECT"<br>
-| stats count(*) by srcAddr<br>
-| sort count desc | limit 10<br>
-
-![Log Insights](./images/w6/observability/qr1.png)<br>
+**Queries**
+![Log Insights](./images/w6/observability/2.1.png)<br>
+**Case 1: Inbound Port Scan**<br>
+1) Mục đích: Detect inbound scanning/reconnaissance vào các port nhạy cảm (SSH, Telnet, RDP, DB, admin port) trong VPC để kiểm tra exposure và validate Security Group/NACL. “Ai đang nhắm vào tôi”<br>
+2) Kết quả: Có nhiều IP public đang scan Telnet, RDP và admin port vào private IP trong VPC, nhưng đều bị AWS block (REJECT). <br>
+3) Có thể làm gì tiếp theo từ query này: Kiểm tra lại Security Group/public access và block các IP scan nhiều nếu cần.<br>
+![Log Insights](./images/w6/observability/2c1_1.png)<br>
+![Log Insights](./images/w6/observability/2c1_2.png)<br>
+**case 2: Top Outbound Traffic: Detect outbound traffic lớn/NAT cost** <br>
+1) Mục đích: Detect outbound traffic lớn từ private subnet ra internet để kiểm tra bất thường và tối ưu NAT Gateway cost. <br>
+2) Kết quả: Các private IP 10.50.x.x đang gửi nhiều HTTPS traffic (443) ra public IP bên ngoài. Chuẩn đoán là application/API traffic bình thường qua NAT Gateway.<br>
+3) Có thể làm gì tiếp theo từ query này: Kiểm tra workload nào tạo nhiều outbound traffic nhất để tối ưu NAT cost hoặc phát hiện traffic bất thường.<br>
+![Log Insights](./images/w6/observability/2c2_1.png)<br>
+![Log Insights](./images/w6/observability/2c2_2.png)<br>
+**Case 3: Rejected Destinations: Detect SG/NACL reject nhiều nhất**<br>
+1) Mục đích: Detect outbound traffic lớn từ private subnet ra internet để kiểm tra bất thường và tối ưu NAT Gateway cost. “resource nào của tôi bị target nhiều nhất” <br>
+2) Kết quả: 10.50.2.218:23 và 10.50.1.212:23 bị reject nhiều nhất, cho thấy có nhiều IP bên ngoài đang scan Telnet vào các private IP này. Ngoài ra còn có probe vào port 3389 (RDP). <br>
+3) Kiểm tra các instance bị target có đang public ngoài ý muốn không và xác nhận Security Group đang block đúng các port nhạy cảm. <br>
+![Log Insights](./images/w6/observability/2c3_1.png)<br>
+![Log Insights](./images/w6/observability/2c3_2.png)<br>
 
 
 
