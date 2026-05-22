@@ -18,6 +18,52 @@
 - **Repo:** [G9-X/Terraform-G9](https://github.com/G9-X/Terraform-G9)
 - **Previous Evidence:** [W5 Evidence Pack](./W5_evidence.md)
 
+Ở tuần thứ 3 evidence pack thì khi chụp bọn em đã chụp mỗi log khi con bedrock trả lời, nên chưa show rõ là có sài RAG hay invoke model thuần. Ở tuần 3 khi đó, tụi em chưa sài bedrock agent, mà chỉ tạo knowledge base rồi chuẩn bị sẵn dữ liệu ở s3, rồi code lambda sẽ sử dụng hàm retrieve kb_id, sau khi có dữ liệu, mới sài hàm converse invoke model để nó trả lời. Còn ở tuần 4 và 5 bọn em đã cải tiến thêm, tạo Bedrock Agent, để agent quyết định xem câu hỏi đó liệu nó sẽ sử dụng kb để có dữ liệu trả lời hay sẽ gọi tool từ action group để lấy dữ liệu rồi mới gen câu trả lời
+
+Ảnh code lambda tuần thứ 3
+![Lambda-w3-1](./images/w6/Recap/Lambda_w3_1.png)
+![Lambda-w3-2](./images/w6/Recap/Lambda_w3_2.png)
+
+Ảnh lambda ở hiện tại
+
+![Recap-1](./images/w6/Recap/Lambda-chat.jpeg)
+![Recap-2](./images/w6/Recap/BedrockAgent-Config.png)
+
+Phần Secret Managers của DB ở W3 chưa show nên tụi e cap lại ở pack tuần này
+![Recap-3](./images/w6/Recap/SecretDB.png)
+Secret của DB sẽ được set ở enviroment variable, task definitions ở ecs
+![Recap-4](./images/w6/Recap/Task-variables.png)
+Lambda chat trigger bedrock agent iam policy của nó tụi em sẽ chỉ cấp cho nó invoke tới agent đã tạo, và ở tuần này policy của lambda chat sẽ có thêm policy put metric data 
+![Recap-5](./images/w6/Recap/Lambda-Policy.png)
+
+Đó là những gì ở tuần 3 và nó đã được thay đổi gì ở w5-w6 hiện tại.
+
+Ở w5 vừa rồi , phần backup chưa bật backup vault lock nhưng hiện tại thì tụi em bị access denied phần này nên chưa tạo 
+
+![Recap-6](./images/w6/Recap/Vault-lock-denied.jpeg)
+	
+Ở phần restore backup w5 vừa rồi khi chạy tụi em chưa chứng minh được dữ liệu thật đã restore chưa nên tụi em bổ sung ảnh tuần này
+
+ảnh efs config gốc, data
+![Recap-7](./images/w6/Recap/config-efsgoc-1.png)
+![Recap-8](./images/w6/Recap/efs-goc.png)
+
+ảnh backup job
+![Recap-](./images/w6/Recap/backup-job.png)
+
+ảnh efs backup, data
+![Recap-9](./images/w6/Recap/config-efsbackup.png)
+![Recap-10](./images/w6/Recap/data-efs-backup.png)
+
+Phần api key api gateway tuần trước tụi em bị lộ ở header, tuần này tụi em đã fix bằng cách cho fe đi tới backend, để backend sử dụng key từ secret manager để gọi tới api gateway và sẽ không bị lộ key như tuần vừa rồi
+
+![Recap-11](./images/w6/Recap/secret-api.png)
+![Recap-12](./images/w6/Recap/Task-variables.png)
+![Recap-13](./images/w6/Recap/backend-1.png)
+![Recap-14](./images/w6/Recap/backend-2.png)
+![Recap-15](./images/w6/Recap/frontend.png)
+
+
 ---
 
 ## (2) MH-COST-V — Cost Visibility & Attribution
@@ -67,6 +113,7 @@
 ![Lambda Tags](./images/w6/cost_visibility/lambda-tags.png)
 
 > **Note:** Cả 2 Lambda function (Cost Guard và Security Guard) đều được gắn tag thông qua Terraform module.
+
 
 <!--
 ### Task 2: Cost Allocation Tags & Cost Explorer
@@ -163,7 +210,7 @@
 
 <!-- 📸 SCREENSHOT: EC2 Console > Instances — showing stopped EC2 instance from Cost Guard -->
 
-![EC2 Stopped by Cost Guard](./images/w6/cost_guard/EC2_Stopped.png)
+![EC2 Stopped by Cost Guard](./images/w6/cost_guard/abc.png)
 
 > **Note:** Ảnh minh họa EC2 instance đã bị Cost Guard dừng khi không có tag `keep=true`. Đây là bằng chứng thực tế cho hành động tự động hóa quản lý chi phí.
 
@@ -175,7 +222,7 @@
 
 <!-- 📸 SCREENSHOT: CloudWatch Console > Dashboards > xbrain-dashboard — showing all 3 widgets -->
 
-![CloudWatch Dashboard](./images/w6/observability/Dashboard.png)
+![CloudWatch Dashboard](./images/w6/observability/Dashboard-Image.png)
 
 > **Note:** Dashboard `Metric` gồm 5 widget:
 >
@@ -185,30 +232,73 @@
 > - **Widget 4 (CWAgent):** `mem_used_percent` — RAM usage trên ECS EC2 host (namespace `CWAgent`)
 > - **Widget 5 (Compute tier):** Lambda `Errors` + `Invocations`
 
-### 4.2. CloudWatch Alarm — ALB 5XX
+### 4.2. CloudWatch Alarm
 
-<!-- 📸 SCREENSHOT: CloudWatch Console > Alarms > ALB_5XX_Alarm — showing alarm state (OK or ALARM) -->
+**Case 1: EC2 high cpu alarm**<br>
+**Mô tả:** EC2 High CPU alarm được sử dụng để phát hiện sớm tình trạng server backend bị quá tải khi lưu lượng truy cập tăng đột biến hoặc ứng dụng xử lý request vượt quá tài nguyên cho phép, từ đó giảm nguy cơ chậm phản hồi và gián đoạn dịch vụ.<br>
 
-![CloudWatch Alarm](./images/w6/observability/alarm-5xx.png)
+![CloudWatch Alarm](./images/w6/observability/1.1.png)<br>
+![CloudWatch Alarm](./images/w6/observability/1.2.png)<br>
+![CloudWatch Alarm](./images/w6/observability/1.3.png)<br>
+Check case 1:Làm tăng CPU:<br>
+![CloudWatch Alarm](./images/w6/observability/1.4.png)<br>
+Results: <br>
+Action thông báo email.<br>
+![CloudWatch Alarm](./images/w6/observability/1.5.jpg)<br>
+Check history trạng thái:<br>
+![CloudWatch Alarm](./images/w6/observability/1.6.png)<br>
+![CloudWatch Alarm](./images/w6/observability/1.7.png)<br>
+<br>
+**Case 2: ALB Backend Error Monitoring** <br>
+**Mô tả:** Phát hiện số lượng lỗi HTTP 5XX tăng cao từ backend phía sau Application Load Balancer. <br>
+![CloudWatch Alarm](./images/w6/observability/case2.1.png)<br>
+![CloudWatch Alarm](./images/w6/observability/case2.3.png)<br>
+**Case 3: ALB-UnHealthyHostCount** <br>
+**mô tả:** Phát hiện target/backend phía sau ALB chuyển sang trạng thái unhealthy hoặc không còn đáp ứng health check. <br>
+![CloudWatch Alarm](./images/w6/observability/case3.1.png)<br>
+**Case 4: ECS-RunningTaskCount-Low**
+**mô tả:** Phát hiện ECS service chạy thiếu số lượng task yêu cầu, có nguy cơ ảnh hưởng khả dụng dịch vụ.
+![CloudWatch Alarm](./images/w6/observability/case4.1.png)<br>
+ACtion case 2,3,4: <br>
+![CloudWatch Alarm](./images/w6/observability/case2.2.png)<br>
 
-> **Note:** Alarm `ALB_5XX_Alarm` trigger khi `HTTPCode_Target_5XX_Count > 5` trong 5 phút liên tục. Trạng thái hiện tại: OK — xác nhận API backend đang hoạt động ổn định.
+## BONUS Composite CloudWatch Alarm
+**Composite CloudWatch Alarm: Service-Availability-Confirmed**<br>
+**Logic:** Composite alarm xác nhận sự cố availability chỉ khi backend ALB trả nhiều lỗi 5XX đồng thời với target unhealthy hoặc ECS service thiếu running task.<br>
+ALARM("ALB-Target-5XX-High") <br>
+AND  <br>
+(<br>
+  ALARM("ALB-UnHealthyHostCount")<br>
+  OR<br>
+  ALARM("ECS-RunningTaskCount-Low")<br>
+)<br>
+**lý do**:Trong hệ thống này, nếu chỉ dùng alarm ALB-Target-5XX-High thì các lỗi 5XX tạm thời cũng có thể gửi cảnh báo dù ECS service vẫn healthy. Để giảm alarm fatigue, composite alarm chỉ trigger khi lỗi 5XX xảy ra đồng thời với: ALB có unhealthy target hoặc ECS thiếu running task. Điều này giúp tránh alert không cần thiết và chỉ cảnh báo khi hệ thống thật sự có sự cố availability. <br>
+![bonus_Alarm](./images/w6/observability/BN1.png)<br>
+![bonus_Alarm](./images/w6/observability/BN2.png)<br>
 
 ### 4.3. Log Insights Query
+**Queries**<br>
+![Log Insights](./images/w6/observability/2.1.png)<br>
+**Case 1: Inbound Port Scan**<br>
+Mục đích: Detect inbound scanning/reconnaissance vào các port nhạy cảm (SSH, Telnet, RDP, DB, admin port) trong VPC để kiểm tra exposure và validate Security Group/NACL. “Ai đang nhắm vào tôi”<br>
+Kết quả: Có nhiều IP public đang scan Telnet, RDP và admin port vào private IP trong VPC, nhưng đều bị AWS block (REJECT). <br>
+Đề xuất tiếp theo: Kiểm tra lại Security Group/public access và block các IP scan nhiều nếu cần.<br>
+![Log Insights](./images/w6/observability/2c1_1.png)<br>
+![Log Insights](./images/w6/observability/2c1_2.png)<br>
+**case 2: Top Outbound Traffic: Detect outbound traffic lớn/NAT cost** <br>
+Mục đích: Detect outbound traffic lớn từ private subnet ra internet để kiểm tra bất thường và tối ưu NAT Gateway cost. <br>
+Kết quả: Các private IP 10.50.x.x đang gửi nhiều HTTPS traffic (443) ra public IP bên ngoài. Chuẩn đoán là application/API traffic bình thường qua NAT Gateway.<br>
+Đề xuất tiếp theo: Kiểm tra workload nào tạo nhiều outbound traffic nhất để tối ưu NAT cost hoặc phát hiện traffic bất thường.<br>
+![Log Insights](./images/w6/observability/2c2_1.png)<br>
+![Log Insights](./images/w6/observability/2c2_2.png)<br>
+**Case 3: Rejected Destinations: Detect SG/NACL reject nhiều nhất**<br>
+Mục đích: Detect outbound traffic lớn từ private subnet ra internet để kiểm tra bất thường và tối ưu NAT Gateway cost. “resource nào của tôi bị target nhiều nhất” <br>
+Kết quả: 10.50.2.218:23 và 10.50.1.212:23 bị reject nhiều nhất, cho thấy có nhiều IP bên ngoài đang scan Telnet vào các private IP này. Ngoài ra còn có probe vào port 3389 (RDP). <br>
+Đề xuất tiếp theo: Kiểm tra các instance bị target có đang public ngoài ý muốn không và xác nhận Security Group đang block đúng các port nhạy cảm. <br>
+![Log Insights](./images/w6/observability/2c3_1.png)<br>
+![Log Insights](./images/w6/observability/2c3_2.png)<br>
 
-<!-- 📸 SCREENSHOT: CloudWatch Logs Insights > Query results — showing error log search -->
 
-![Log Insights](./images/w6/observability/log-insights.png)
-
-> **Note:** Saved query trên CloudWatch Logs Insights tìm kiếm error patterns trong ECS backend log group `/ecs/xbrain/backend/us-dev`. Query mẫu:
->
-> ```
-> fields @timestamp, @message
-> | filter @message like /(?i)(error|exception|fail)/
-> | sort @timestamp desc
-> | limit 20
-> ```
-
----
 
 ## (5) MH-SEC — Self-Healing Security Guard
 
@@ -369,15 +459,14 @@ Từ thiết kế hạ tầng Week 5, tụi em đã chủ động lựa chọn s
 - **On-Demand Rate:** $0.0208/hour per instance.
 - **Monthly Spend (On-Demand):** $0.0208 × 730 hours ≈ **$15.18/month**.
 
-#### 1-Year Compute Savings Plan (No Upfront — 28% discount)
+#### 1-Year Compute Savings Plan (No Upfront)
 
-- **Savings Plan Rate:** $0.0150/hour per instance.
-- **Monthly Commit Spend:** $0.0150 × 730 hours ≈ **$10.95/month**.
-- **Monthly Savings:** **$4.23/month**.
+- **Savings Plan Commit:** **$10.95/month**.
+- **Monthly Savings:** $15.18 - $10.95 = **$4.23/month** (khoảng 28%).
 
 #### Break-Even & Recommendation
 
-- **Break-Even Point:** Since this is a 1-year contract, the total annual commitment is **$131.40**. The break-even point against On-Demand occurs at **8.6 months** of continuous usage ($131.40 / $15.18).
+- **Break-Even Point:** Since this is a 1-year contract, the total annual commitment is **$131.40** ($10.95 × 12). The break-even point against On-Demand occurs at **8.6 months** of continuous usage ($131.40 / $15.18).
 - **Justified Deferral Decision:** Vì tài khoản AWS workshop thực chất chỉ được cấp phát và hoạt động **3 ngày mỗi tuần** (bị xóa hoặc khóa vào các ngày còn lại), việc mua Savings Plan kỳ hạn 1 năm sẽ là một quyết định lãng phí tài chính khổng lồ. Sẽ phải trả tiền cho toàn bộ 365 ngày nhưng chỉ thực sự sử dụng hạ tầng chưa tới 150 ngày. Do đó, việc trì hoãn (defer) mua Savings Plan và tiếp tục sử dụng On-Demand kết hợp với Auto Scaling/Cost Guard Lambda là quyết định FinOps tối ưu nhất cho profile của dự án này.
 
 <!-- 📸 SCREENSHOT: (Optional) AWS Pricing Calculator showing t3.small pricing comparison -->
@@ -388,23 +477,26 @@ Từ thiết kế hạ tầng Week 5, tụi em đã chủ động lựa chọn s
 
 ### Bonus 3: Terraform IaC for Self-Healing Resources (+0.25)
 
-Toàn bộ Cost Guard Lambda được triển khai 100% qua Terraform module `module/CostGuard`:
+Toàn bộ **Cost Guard Lambda** được triển khai 100% qua Terraform module `module/CostGuard`:
 
-- **Lambda function** + **IAM Role** least-privilege
+- **Lambda function** + **IAM Role** (least-privilege)
 - **EventBridge Schedule** (daily trigger)
 - **SNS Topic** + **Lambda Subscription**
 - **AWS Budgets** alert ($150/day → SNS → Lambda)
 
-#### Terraform Validate Output
+#### 1. Terraform Validate — Thành công
+![Terraform Validate Success](./images/w6/bonus/terraform-validate.png)
 
-<!-- 📸 SCREENSHOT: Terminal showing `terraform validate` → "Success! The configuration is valid." -->
+> **Note:** `terraform validate` chạy thành công sau khi merge PR #24 (fix cost-guard dev targeting).
 
-![Terraform Validate](./images/w6/bonus/terraform-validate.png)
+#### 2. Module CostGuard — main.tf
+![CostGuard main.tf](./images/w6/bonus/terraform-costguard-code.png)
 
-#### Terraform Module Code
+#### 3. Các file quan trọng khác trong module
 
-<!-- 📸 SCREENSHOT: Code editor showing module/CostGuard/main.tf -->
+**variables.tf**
+![CostGuard variables.tf](./images/w6/bonus/terraform-costguard-variables.png)
 
-![Terraform CostGuard Module](./images/w6/bonus/terraform-costguard-code.png)
-
+**outputs.tf**
+![CostGuard outputs.tf](./images/w6/bonus/terraform-costguard-outputs.png)
 - **Git Commit Link:** [G9-X/Terraform-G9 — W6 Cost & Security](https://github.com/G9-X/Terraform-G9/commits/main)
